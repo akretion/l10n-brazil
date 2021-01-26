@@ -2,7 +2,8 @@
 # Copyright (C) 2019 - TODAY Raphaël Valyi - Akretion
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
-from odoo import api, fields, models
+from odoo import api, fields, models, _
+from odoo.exceptions import UserError
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     SITUACAO_EDOC_EM_DIGITACAO,
@@ -186,7 +187,7 @@ class AccountInvoiceLine(models.Model):
     @api.model
     def default_get(self, fields_list):
         defaults = super().default_get(fields_list)
-        inv_type = self.env.context.get('type', 'out_invoice')
+        # inv_type = self.env.context.get('type', 'out_invoice')  # TODO
         return defaults
 
     @api.model
@@ -240,7 +241,8 @@ class AccountInvoiceLine(models.Model):
         to_unlink = document_lines.mapped('fiscal_document_line_id')
         result = super().unlink()
         if to_unlink:
-            if any(d.document_id.state != SITUACAO_EDOC_EM_DIGITACAO for d in to_unlink):
+            if any(d.document_id.state !=
+                   SITUACAO_EDOC_EM_DIGITACAO for d in to_unlink):
                 UserError(_("You cannot delete a fiscal document "
                             "which is not draft state."))
             else:
