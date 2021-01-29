@@ -143,14 +143,14 @@ class AccountInvoiceLine(models.Model):
 
     @api.multi
     def write(self, values):
-        dummy_doc_line = self.env.ref(
-            'l10n_br_fiscal.fiscal_document_line_dummy')
+        dummy_line = self.env.ref('l10n_br_fiscal.fiscal_document_line_dummy')
         if values.get('invoice_id'):
             values['document_id'] = self.env[
-                "account.invoice"].browse(values['invoice_id']).fiscal_document_id.id
+                "account.invoice"].browse(
+                    values['invoice_id']).fiscal_document_id.id
         result = super().write(values)
         for line in self:
-            if line.fiscal_document_line_id != dummy_doc_line:
+            if line.fiscal_document_line_id != dummy_line:
                 shadowed_fiscal_vals = line._prepare_shadowed_fields_dict()
                 line.fiscal_document_line_id.write(shadowed_fiscal_vals)
         return result
