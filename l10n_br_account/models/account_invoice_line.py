@@ -137,6 +137,7 @@ class AccountInvoiceLine(models.Model):
             shadowed_fiscal_vals = line._prepare_shadowed_fields_dict()
             doc_id = line.invoice_id.fiscal_document_id.id
             shadowed_fiscal_vals['document_id'] = doc_id
+            line.fiscal_document_line_id._update_taxes()
             line.fiscal_document_line_id.write(shadowed_fiscal_vals)
         return line
 
