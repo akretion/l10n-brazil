@@ -2,3 +2,8 @@ from . import invalidate_number
 from . import document_event
 from . import document_workflow
 from . import document
+from . import document_service
+from . import document_type
+from . import document_service_message
+from . import event
+from . import event_transmission
