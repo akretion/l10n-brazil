@@ -30,3 +30,17 @@ class DocumentEvent(models.Model):
         column2="document_type_id",
         string="Document Type",
     )
+
+    document_service_id = fields.Many2one(
+        comodel_name="l10n_br_fiscal.document.service",
+        string="Document Service",
+        # required=True,
+    )
+
+    document_event_message_ids = fields.Many2many(
+        comodel_name="l10n_br_fiscal.document.service.message",
+        relation="fiscal_document_event_service_message_rel",
+        column1="document_event_id",
+        column2="document_service_message_id",
+        string="Document Event Message",
+    )

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+
+    <record id="document_event_search" model="ir.ui.view">
+        <field name="name">l10n_br_fiscal.document.event.search</field>
+        <field name="model">l10n_br_fiscal.document.event</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="code" />
+                <field name="document_type_ids" />
+            </search>
+        </field>
+    </record>
+
+    <record id="document_event_tree" model="ir.ui.view">
+        <field name="name">l10n_br_fiscal.document.event.tree</field>
+        <field name="model">l10n_br_fiscal.document.event</field>
+        <field name="arch" type="xml">
+            <tree edit="false" create="false">
+                <field name="code" />
+                <field name="name" />
+                <field name="document_type_ids" widget="many2many_tags" />
+                <field name="document_service_id" />
+            </tree>
+        </field>
+    </record>
+
+    <record id="document_event_form" model="ir.ui.view">
+        <field name="name">l10n_br_fiscal.document.event.form</field>
+        <field name="model">l10n_br_fiscal.document.event</field>
+        <field name="arch" type="xml">
+            <form edit="false" create="false">
+                <sheet>
+                    <group>
+                        <field name="code" />
+                        <field name="name" />
+                        <field name="description" />
+                        <field name="event_type" />
+                        <field name="document_type_ids" widget="many2many_tags" />
+                        <field name="document_service_id" />
+                        <field name="document_event_message_ids" widget="many2many_tags" />
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+</odoo>

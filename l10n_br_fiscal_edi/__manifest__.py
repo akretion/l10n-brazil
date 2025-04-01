@@ -19,10 +19,11 @@
         # Views
         "views/document_view.xml",
         "views/invalidate_number_view.xml",
-        "views/document_event_view.xml",
+        "views/event_view.xml",
         "views/document_type_view.xml",
         "views/document_service_view.xml",
         "views/document_service_message_view.xml",
+        "views/document_event_view.xml",
         "views/document_event_template.xml",
         # Reports
         "views/document_event_report.xml",
