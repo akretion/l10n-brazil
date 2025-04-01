@@ -28,5 +28,5 @@ class DocumentService(models.Model):
     document_service_message_ids = fields.One2many(
         comodel_name="l10n_br_fiscal.document.service.message",
         inverse_name="document_service_id",
-        string="Document Service Message"
+        string="Document Service Message",
     )

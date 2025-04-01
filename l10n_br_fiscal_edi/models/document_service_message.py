@@ -25,9 +25,6 @@ class DocumentServiceMessage(models.Model):
     # )
 
     message_type = fields.Selection(
-        selection=[
-            ('request', 'Request'),
-            ('response', 'Response')
-        ],
+        selection=[("request", "Request"), ("response", "Response")],
         string="Message Type",
     )

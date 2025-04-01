@@ -38,7 +38,10 @@
                         <field name="event_type" />
                         <field name="document_type_ids" widget="many2many_tags" />
                         <field name="document_service_id" />
-                        <field name="document_event_message_ids" widget="many2many_tags" />
+                        <field
+                            name="document_event_message_ids"
+                            widget="many2many_tags"
+                        />
                     </group>
                 </sheet>
             </form>
