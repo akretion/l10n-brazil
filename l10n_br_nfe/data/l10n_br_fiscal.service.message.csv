@@ -1,4 +1,4 @@
-"id","code","name","description","message_type","document_service_id:id"
+"id","code","name","description","message_type","service_id:id"
 "document_55_65_message_nfeautorizacao_enviNFe","enviNFe","Mensagem de envio de lote de NF-e","Mensagem de envio de lote de NF-e","request","l10n_br_nfe.document_55_65_service_nfeautorizacao"
 "document_55_65_message_nfeautorizacao_retEnviNFe","retEnviNFe","Mensagem de retorno do envio de lote de NF-e","Mensagem de retorno do envio de lote de NF-e","response","l10n_br_nfe.document_55_65_service_nfeautorizacao"
 "document_55_65_message_nferetautorizacao_consReciNFe","consReciNFe","Mensagem de consulta processamento do lote de NF-e transmitida","Mensagem de consulta processamento do lote de NF-e transmitida","request","l10n_br_nfe.document_55_65_service_nferetautorizacao"
