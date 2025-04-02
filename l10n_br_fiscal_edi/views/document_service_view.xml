@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <odoo>
 
-    <record id="document_service_search" model="ir.ui.view">
-        <field name="name">l10n_br_fiscal.document.service.search</field>
-        <field name="model">l10n_br_fiscal.document.service</field>
+    <record id="service_search" model="ir.ui.view">
+        <field name="name">l10n_br_fiscal.service.search</field>
+        <field name="model">l10n_br_fiscal.service</field>
         <field name="arch" type="xml">
-            <search string="Fiscal Document Service">
+            <search>
                 <field name="code" />
                 <field name="document_type_ids" />
             </search>
         </field>
     </record>
 
-    <record id="document_service_tree" model="ir.ui.view">
-        <field name="name">l10n_br_fiscal.document.service.tree</field>
-        <field name="model">l10n_br_fiscal.document.service</field>
+    <record id="service_tree" model="ir.ui.view">
+        <field name="name">l10n_br_fiscal.service.tree</field>
+        <field name="model">l10n_br_fiscal.service</field>
         <field name="arch" type="xml">
             <tree edit="false" create="false">
                 <field name="code" />
@@ -24,11 +24,11 @@
         </field>
     </record>
 
-    <record id="document_service_form" model="ir.ui.view">
-        <field name="name">l10n_br_fiscal.document.service.form</field>
-        <field name="model">l10n_br_fiscal.document.service</field>
+    <record id="service_form" model="ir.ui.view">
+        <field name="name">l10n_br_fiscal.service.form</field>
+        <field name="model">l10n_br_fiscal.service</field>
         <field name="arch" type="xml">
-            <form string="Fiscal Document Service" edit="false" create="false">
+            <form edit="false" create="false">
                 <sheet>
                     <group>
                         <field name="code" />
@@ -36,13 +36,8 @@
                         <field name="description" />
                         <field name="document_type_ids" widget="many2many_tags" />
                     </group>
-                    <field name="document_service_message_ids" nolabel="1" />
+                    <field name="service_message_ids" nolabel="1" />
                 </sheet>
-                <div class="oe_chatter">
-                    <field name="message_follower_ids" widget="mail_followers" />
-                    <field name="activity_ids" widget="mail_activity" />
-                    <field name="message_ids" widget="mail_thread" />
-                </div>
             </form>
         </field>
     </record>

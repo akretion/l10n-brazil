@@ -4,25 +4,24 @@
 from odoo import fields, models
 
 
-class DocumentServiceMessage(models.Model):
-    _name = "l10n_br_fiscal.document.service.message"
+class ServiceMessage(models.Model):
+    _name = "l10n_br_fiscal.service.message"
     _inherit = "l10n_br_fiscal.data.abstract"
-    _description = "Generic Document Service Message"
+    _description = "Generic Fiscal Service Message"
 
     name = fields.Char(required=True, index=True)
 
     description = fields.Text(required=True, index=True)
 
-    document_service_id = fields.Many2one(
-        comodel_name="l10n_br_fiscal.document.service",
-        string="Fiscal Document Service",
+    service_id = fields.Many2one(
+        comodel_name="l10n_br_fiscal.service",
+        string="Fiscal Service",
     )
 
-    # document_type_id = fields.Many2one(
-    #     comodel_name="l10n_br_fiscal.document.type",
-    #     related="document_service_id.document_type_id",
-    #     string="Document Type",
-    # )
+    document_type_id = fields.Many2one(
+        related="service_id.document_type_id",
+        string="Document Type",
+    )
 
     message_type = fields.Selection(
         selection=[("request", "Request"), ("response", "Response")],

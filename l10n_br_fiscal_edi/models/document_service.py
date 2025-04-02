@@ -4,14 +4,10 @@
 from odoo import fields, models
 
 
-class DocumentService(models.Model):
-    _name = "l10n_br_fiscal.document.service"
-    _inherit = [
-        "l10n_br_fiscal.data.abstract",
-        "mail.thread",
-        "mail.activity.mixin",
-    ]
-    _description = "Generic Document Service"
+class Service(models.Model):
+    _name = "l10n_br_fiscal.service"
+    _inherit = "l10n_br_fiscal.data.abstract"
+    _description = "Generic Fiscal Service"
 
     name = fields.Char(required=True, index=True)
 
@@ -25,8 +21,8 @@ class DocumentService(models.Model):
         string="Document Type",
     )
 
-    document_service_message_ids = fields.One2many(
-        comodel_name="l10n_br_fiscal.document.service.message",
-        inverse_name="document_service_id",
-        string="Document Service Message",
+    service_message_ids = fields.One2many(
+        comodel_name="l10n_br_fiscal.service.message",
+        inverse_name="service_id",
+        string="Fiscal Service Message",
     )

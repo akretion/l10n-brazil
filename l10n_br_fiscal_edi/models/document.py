@@ -35,7 +35,7 @@ class Document(models.Model):
     ]
 
     event_ids = fields.One2many(
-        comodel_name="l10n_br_fiscal.event",
+        comodel_name="l10n_br_fiscal.document.event",
         inverse_name="document_id",
         string="Events",
         copy=False,
@@ -43,7 +43,7 @@ class Document(models.Model):
     )
 
     correction_event_ids = fields.One2many(
-        comodel_name="l10n_br_fiscal.event",
+        comodel_name="l10n_br_fiscal.document.event",
         inverse_name="document_id",
         domain=[("type", "=", "14")],
         string="Correction Events",
@@ -71,7 +71,7 @@ class Document(models.Model):
 
     # Authorization Event Related Fields
     authorization_event_id = fields.Many2one(
-        comodel_name="l10n_br_fiscal.event",
+        comodel_name="l10n_br_fiscal.document.event",
         string="Authorization Event",
         readonly=True,
         copy=False,
@@ -105,7 +105,7 @@ class Document(models.Model):
 
     # Cancel Event Related Fields
     cancel_event_id = fields.Many2one(
-        comodel_name="l10n_br_fiscal.event",
+        comodel_name="l10n_br_fiscal.document.event",
         string="Cancel Event",
         copy=False,
     )
@@ -130,7 +130,7 @@ class Document(models.Model):
 
     # Invalidate Event Related Fields
     invalidate_event_id = fields.Many2one(
-        comodel_name="l10n_br_fiscal.event",
+        comodel_name="l10n_br_fiscal.document.event",
         string="Invalidate Event",
         copy=False,
     )
