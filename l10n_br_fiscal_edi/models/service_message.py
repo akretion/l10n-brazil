@@ -18,8 +18,8 @@ class ServiceMessage(models.Model):
         string="Fiscal Service",
     )
 
-    document_type_id = fields.Many2one(
-        related="service_id.document_type_id",
+    document_type_ids = fields.Many2many(
+        related="service_id.document_type_ids",
         string="Document Type",
     )
 

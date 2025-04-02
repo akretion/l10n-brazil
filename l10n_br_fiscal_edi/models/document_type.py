@@ -7,18 +7,18 @@ from odoo import fields, models
 class DocumentType(models.Model):
     _inherit = "l10n_br_fiscal.document.type"
 
-    document_service_ids = fields.Many2many(
-        comodel_name="l10n_br_fiscal.document.service",
+    service_ids = fields.Many2many(
+        comodel_name="l10n_br_fiscal.service",
         relation="fiscal_document_type_service_rel",
         column1="document_type_id",
-        column2="document_service_id",
+        column2="service_id",
         string="Document Service",
     )
 
-    document_event_ids = fields.Many2many(
-        comodel_name="l10n_br_fiscal.document.event",
+    event_ids = fields.Many2many(
+        comodel_name="l10n_br_fiscal.event",
         relation="fiscal_document_type_event_rel",
         column1="document_type_id",
-        column2="document_event_id",
+        column2="event_id",
         string="Document Event",
     )

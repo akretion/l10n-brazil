@@ -16,7 +16,7 @@ class Service(models.Model):
     document_type_ids = fields.Many2many(
         comodel_name="l10n_br_fiscal.document.type",
         relation="fiscal_document_type_service_rel",
-        column1="document_service_id",
+        column1="service_id",
         column2="document_type_id",
         string="Document Type",
     )

@@ -2,9 +2,7 @@
 # Copyright (C) 2014  KMEE - www.kmee.com.br
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
-import base64
 import logging
-import os
 
 from odoo import _, api, fields, models
 
@@ -33,8 +31,8 @@ _logger = logging.getLogger(__name__)
 # }
 
 
-class Event(models.Model):
-    _name = "l10n_br_fiscal.event"
+class DocumentEvent(models.Model):
+    _name = "l10n_br_fiscal.document.event"
     _description = "Generic Fiscal Document Event"
 
     @api.depends("document_id.name", "invalidate_number_id.name")
@@ -83,9 +81,7 @@ class Event(models.Model):
 
     # TODO precisa ter a empresa no evento, não pode ser um related do documento fiscal
     # Porque pode estar ligado a uma sequencia de invalidação
-    company_id = fields.Many2one(
-        comodel_name="res.company" 
-    )
+    company_id = fields.Many2one(comodel_name="res.company")
 
     sequence = fields.Char(
         help="Fiscal Document Event Sequence",
@@ -108,7 +104,7 @@ class Event(models.Model):
     )
 
     message_response_id = fields.Many2one(
-        comodel_name="l10n_br_fiscal.document.service.message",
+        comodel_name="l10n_br_fiscal.service.message",
         string="Message Response",
         domain="[('message_type', '=', 'response')]",
     )

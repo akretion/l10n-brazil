@@ -8,22 +8,22 @@
         <field name="arch" type="xml">
             <xpath expr="//page[@name='document_email']" position="after">
                 <page
-                    name="document_service"
-                    string="Document Services"
+                    name="service"
+                    string="Services"
                     attrs="{'invisible': [('electronic', '=', False)]}"
                 >
                     <field
-                        name="document_service_ids"
+                        name="service_ids"
                         context="{'default_document_type_id': id}"
                     />
                 </page>
                 <page
-                    name="document_event"
-                    string="Document Events"
+                    name="event"
+                    string="Events"
                     attrs="{'invisible': [('electronic', '=', False)]}"
                 >
                     <field
-                        name="document_event_ids"
+                        name="event_ids"
                         context="{'default_document_type_id': id}"
                     />
                 </page>

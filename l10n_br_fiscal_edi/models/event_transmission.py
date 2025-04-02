@@ -13,20 +13,20 @@ class EventTransmission(models.Model):
         string="Document Event",
     )
 
-    document_event_id = fields.Many2one(
-        comodel_name="l10n_br_fiscal.document.event",
+    event_id = fields.Many2one(
+        comodel_name="l10n_br_fiscal.event",
         string="Fiscal Document",
         index=True,
     )
 
-    document_service_id = fields.Many2one(
-        comodel_name="l10n_br_fiscal.document.service",
+    service_id = fields.Many2one(
+        comodel_name="l10n_br_fiscal.service",
         string="Document Service",
-        domain="[('document_type_id', '=', document_type_id)]"
+        domain="[('document_type_id', '=', document_type_id)]",
     )
 
     document_service_code = fields.Char(
-        related="document_service_id.code",
+        # related="service_id.code",
         string="Document Service Code"
     )
 
@@ -42,15 +42,13 @@ class EventTransmission(models.Model):
     # Campos com informações de Envio
 
     message_request_id = fields.Many2one(
-        comodel_name="l10n_br_fiscal.document.service.message",
+        comodel_name="l10n_br_fiscal.service.message",
         string="Message Request",
-        domain="[('document_service_id', '=', document_service_id),"
-               "('message_type', '=', 'request')]",
+        domain="[('service_id', '=', service_id)," "('message_type', '=', 'request')]",
     )
 
     message_request_code = fields.Char(
-        related="message_request_id.code",
-        string="Message Request Code"
+        related="message_request_id.code", string="Message Request Code"
     )
 
     service_request = fields.Text(string="Service Request")
@@ -60,14 +58,13 @@ class EventTransmission(models.Model):
     # Campos com informações de retorno
 
     message_response_id = fields.Many2one(
-        comodel_name="l10n_br_fiscal.document.service.message",
+        comodel_name="l10n_br_fiscal.document.message",
         string="Message Response",
-        domain="[('document_service_id', '=', document_service_id),"
-               "('message_type', '=', 'response')]",
+        domain="[('service_id', '=', service_id)," "('message_type', '=', 'response')]",
     )
 
     message_response_code = fields.Char(
-        related="message_response_id.code",
+        # related="message_response_id.code",
     )
 
     service_response = fields.Text(string="Service Response")
@@ -87,10 +84,7 @@ class EventTransmission(models.Model):
     response_message_description = fields.Char(string="Message Description")
 
     state = fields.Selection(
-        selection=[
-            ('todo', 'To Do'),
-            ('done', 'Done')
-        ],
+        selection=[("todo", "To Do"), ("done", "Done")],
         string="State",
         default="todo",
     )

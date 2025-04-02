@@ -48,13 +48,13 @@
                                 <field name="id" />
                                 <field name="justification" />
                                 <field name="create_date" />
-                                <field name="state" />
-                                <button
+                                <!-- <field name="state" /> -->
+                                <!-- <button
                                         name="print_document_event"
                                         title="Print Document Event"
                                         icon="fa-print"
                                         type="object"
-                                    />
+                                    /> -->
                             </tree>
                         </field>
                     </group>
@@ -62,10 +62,10 @@
                         <field name="event_ids" nolabel="1" colspan="2">
                             <tree>
                                 <field name="id" />
-                                <field name="type" />
-                                <field name="origin" />
+                                <!-- <field name="type" /> -->
+                                <!-- <field name="origin" /> -->
                                 <field name="create_date" />
-                                <field name="state" />
+                                <!-- <field name="state" /> -->
                             </tree>
                         </field>
                     </group>

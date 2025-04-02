@@ -9,7 +9,7 @@ class InvalidateNumber(models.Model):
     _inherit = "l10n_br_fiscal.invalidate.number"
 
     event_ids = fields.One2many(
-        comodel_name="l10n_br_fiscal.event",
+        comodel_name="l10n_br_fiscal.document.event",
         inverse_name="invalidate_number_id",
         string="Events",
         readonly=True,
@@ -18,7 +18,7 @@ class InvalidateNumber(models.Model):
 
     # Authorization Event Related Fields
     authorization_event_id = fields.Many2one(
-        comodel_name="l10n_br_fiscal.event",
+        comodel_name="l10n_br_fiscal.document.event",
         string="Authorization Event",
         readonly=True,
         copy=False,
@@ -26,24 +26,26 @@ class InvalidateNumber(models.Model):
 
     authorization_date = fields.Datetime(
         string="Authorization Date",
-        related="authorization_event_id.protocol_date",
+        readonly=True,
+        # related="authorization_event_id.protocol_date",
     )
 
     authorization_protocol = fields.Char(
         string="Authorization Protocol",
-        related="authorization_event_id.protocol_number",
+        # related="authorization_event_id.protocol_number",
+        readonly=True,
     )
 
     send_file_id = fields.Many2one(
         comodel_name="ir.attachment",
-        related="authorization_event_id.file_request_id",
+        # related="authorization_event_id.file_request_id",
         string="Send Document File XML",
         ondelete="restrict",
     )
 
     authorization_file_id = fields.Many2one(
         comodel_name="ir.attachment",
-        related="authorization_event_id.file_response_id",
+        # related="authorization_event_id.file_response_id",
         string="Authorization File XML",
         ondelete="restrict",
     )

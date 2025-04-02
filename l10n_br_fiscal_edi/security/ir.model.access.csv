@@ -1,5 +1,4 @@
 "id","name","model_id:id","group_id:id","perm_read","perm_write","perm_create","perm_unlink"
-"l10n_br_fiscal_event_user","Fiscal Document Event for User",model_l10n_br_fiscal_event,l10n_br_fiscal.group_user,1,1,1,0
 "l10n_br_fiscal_invalidate_number_user","user_l10n_br_fiscal_invalidate_number",model_l10n_br_fiscal_invalidate_number,l10n_br_fiscal.group_user,1,0,0,0
 "l10n_br_fiscal_invalidate_number_manager","manager_l10n_br_fiscal_invalidate_number",model_l10n_br_fiscal_invalidate_number,l10n_br_fiscal.group_manager,1,1,1,1
 "l10n_br_fiscal_invalidate_number_wizard_user",l10n_br_fiscal_invalidate_number_wizard,model_l10n_br_fiscal_invalidate_number_wizard,base.group_user,1,1,1,1
@@ -9,12 +8,12 @@
 "l10n_br_fiscal_document_event_user","Fiscal Document Event for User","model_l10n_br_fiscal_document_event","l10n_br_fiscal.group_user",1,0,0,0
 "l10n_br_fiscal_document_event_manager","Fiscal Document Event for Manager","model_l10n_br_fiscal_document_event","l10n_br_fiscal.group_manager",1,0,0,0
 "l10n_br_fiscal_document_event_maintenance","Fiscal Document Event for Maintenance","model_l10n_br_fiscal_document_event","l10n_br_fiscal.group_data_maintenance",1,1,1,1
-"l10n_br_fiscal_document_service_user","Fiscal Document Service for User","model_l10n_br_fiscal_document_service","l10n_br_fiscal.group_user",1,0,0,0
-"l10n_br_fiscal_document_service_manager","Fiscal Document Service for Manager","model_l10n_br_fiscal_document_service","l10n_br_fiscal.group_manager",1,0,0,0
-"l10n_br_fiscal_document_service_maintenance","Fiscal Document Service for Maintenance","model_l10n_br_fiscal_document_service","l10n_br_fiscal.group_data_maintenance",1,1,1,1
-"l10n_br_fiscal_document_service_message_user","Fiscal Document Service Message for User","model_l10n_br_fiscal_document_service_message","l10n_br_fiscal.group_user",1,0,0,0
-"l10n_br_fiscal_document_service_message_manager","Fiscal Document Service Message for Manager","model_l10n_br_fiscal_document_service_message","l10n_br_fiscal.group_manager",1,0,0,0
-"l10n_br_fiscal_document_service_message_maintenance","Fiscal Document Service Message for Maintenance","model_l10n_br_fiscal_document_service_message","l10n_br_fiscal.group_data_maintenance",1,1,1,1
+"l10n_br_fiscal_service_user","Fiscal Service for User","model_l10n_br_fiscal_service","l10n_br_fiscal.group_user",1,0,0,0
+"l10n_br_fiscal_service_manager","Fiscal Service for Manager","model_l10n_br_fiscal_service","l10n_br_fiscal.group_manager",1,0,0,0
+"l10n_br_fiscal_service_maintenance","Fiscal Service for Maintenance","model_l10n_br_fiscal_service","l10n_br_fiscal.group_data_maintenance",1,1,1,1
+"l10n_br_fiscal_service_message_user","Fiscal Service Message for User","model_l10n_br_fiscal_service_message","l10n_br_fiscal.group_user",1,0,0,0
+"l10n_br_fiscal_service_message_manager","Fiscal Service Message for Manager","model_l10n_br_fiscal_service_message","l10n_br_fiscal.group_manager",1,0,0,0
+"l10n_br_fiscal_service_message_maintenance","Fiscal Service Message for Maintenance","model_l10n_br_fiscal_service_message","l10n_br_fiscal.group_data_maintenance",1,1,1,1
 "l10n_br_fiscal_event_user","Fiscal Event for User","model_l10n_br_fiscal_event","l10n_br_fiscal.group_user",1,0,0,0
 "l10n_br_fiscal_event_manager","Fiscal Event for Manager","model_l10n_br_fiscal_event","l10n_br_fiscal.group_manager",1,0,0,0
 "l10n_br_fiscal_event_maintenance","Fiscal Event for Maintenance","model_l10n_br_fiscal_event","l10n_br_fiscal.group_data_maintenance",1,1,1,1

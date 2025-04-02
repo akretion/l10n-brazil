@@ -45,7 +45,7 @@ class Document(models.Model):
     correction_event_ids = fields.One2many(
         comodel_name="l10n_br_fiscal.document.event",
         inverse_name="document_id",
-        domain=[("type", "=", "14")],
+        #     domain=[("type", "=", "14")],
         string="Correction Events",
         copy=False,
         readonly=True,
@@ -78,18 +78,18 @@ class Document(models.Model):
     )
 
     authorization_date = fields.Datetime(
-        related="authorization_event_id.protocol_date",
+        # related="authorization_event_id.protocol_date",
         string="Authorization Protocol Date",
     )
 
     authorization_protocol = fields.Char(
-        related="authorization_event_id.protocol_number",
+        # related="authorization_event_id.protocol_number",
         string="Authorization Protocol Number",
     )
 
     send_file_id = fields.Many2one(
         comodel_name="ir.attachment",
-        related="authorization_event_id.file_request_id",
+        # related="authorization_event_id.file_request_id",
         string="Send Document File XML",
         ondelete="restrict",
         readonly=True,
@@ -97,7 +97,7 @@ class Document(models.Model):
 
     authorization_file_id = fields.Many2one(
         comodel_name="ir.attachment",
-        related="authorization_event_id.file_response_id",
+        # related="authorization_event_id.file_response_id",
         string="Authorization File XML",
         ondelete="restrict",
         readonly=True,
@@ -111,18 +111,18 @@ class Document(models.Model):
     )
 
     cancel_date = fields.Datetime(
-        related="cancel_event_id.protocol_date",
+        # related="cancel_event_id.protocol_date",
         string="Cancel Protocol Date",
     )
 
     cancel_protocol_number = fields.Char(
-        related="cancel_event_id.protocol_number",
+        # related="cancel_event_id.protocol_number",
         string="Cancel Protocol Protocol",
     )
 
     cancel_file_id = fields.Many2one(
         comodel_name="ir.attachment",
-        related="cancel_event_id.file_response_id",
+        # related="cancel_event_id.file_response_id",
         string="Cancel File XML",
         ondelete="restrict",
         readonly=True,
@@ -136,18 +136,18 @@ class Document(models.Model):
     )
 
     invalidate_date = fields.Datetime(
-        related="invalidate_event_id.protocol_date",
+        # related="invalidate_event_id.protocol_date",
         string="Invalidate Protocol Date",
     )
 
     invalidate_protocol_number = fields.Char(
-        related="invalidate_event_id.protocol_number",
+        # related="invalidate_event_id.protocol_number",
         string="Invalidate Protocol Number",
     )
 
     invalidate_file_id = fields.Many2one(
         comodel_name="ir.attachment",
-        related="invalidate_event_id.file_response_id",
+        # related="invalidate_event_id.file_response_id",
         string="Invalidate File XML",
         ondelete="restrict",
         readonly=True,
