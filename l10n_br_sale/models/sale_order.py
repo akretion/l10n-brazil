@@ -93,7 +93,9 @@ class SaleOrder(models.Model):
 
     def _get_amount_lines(self):
         """Get object lines instaces used to compute fields"""
-        return self.mapped("order_line")
+        res = self.mapped("order_line")
+        print("GET AMOUNT LINES", self, res)
+        return res
 
     @api.depends("order_line")
     def _compute_amount(self):

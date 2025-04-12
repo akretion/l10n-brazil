@@ -10,11 +10,20 @@ class AccountMove(models.Model):
 
     def _recompute_payment_terms_lines(self):
         self.ensure_one()
+        print("RECOMP PAY TERMS", self.nfe40_dup.mapped("nfe40_vDup"))
+        print(
+            "  sum debit",
+            self.invoice_line_ids,
+            sum(self.invoice_line_ids.mapped("debit")),
+        )
+        print("  sum vDup", self.nfe40_dup, sum(self.nfe40_dup.mapped("nfe40_vDup")))
+        print("  AMOUNT TOTAL", self.amount_total)
         if (
             self.imported_document
             and self.nfe40_dup
             and float_compare(
-                sum(self.invoice_line_ids.mapped("debit")),
+                #sum(self.invoice_line_ids.mapped("debit")),
+                self.amount_total,
                 sum(self.nfe40_dup.mapped("nfe40_vDup")),
                 2,
             )
@@ -25,6 +34,7 @@ class AccountMove(models.Model):
                 lambda line: line.account_id.user_type_id.type
                 in ("receivable", "payable")
             )
+            print("existing", existing_terms_lines)
             self.line_ids -= existing_terms_lines
 
             if self != self._origin:  # is it a draft move?
@@ -40,7 +50,7 @@ class AccountMove(models.Model):
                 dup_account = (
                     self.partner_id.commercial_partner_id.property_account_payable_id
                 )
-
+            print("for dup in", self.nfe40_dup, create_method)
             for dup in self.nfe40_dup:
                 create_method(
                     {
