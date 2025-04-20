@@ -67,6 +67,12 @@ class SpecModel(models.Model):
                 rec.display_name = _("Open...")
         return res
 
+    def _valid_field_parameter(self, field, name):
+        return (
+            name in ("size", "original_comodel_name")
+            or super()._valid_field_parameter(field, name)
+        )
+
     @classmethod
     def _build_model(cls, pool, cr):
         """
