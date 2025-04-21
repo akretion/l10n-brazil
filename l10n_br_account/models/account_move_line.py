@@ -55,6 +55,7 @@ class AccountMoveLine(models.Model):
 
     display_type = fields.Selection(selection_add=[('br_freight', "Freight")], ondelete={"br_freight":  lambda recs: recs.write({"display_type": "product"})})
 
+    freight_line_type = fields.Selection([("debit", "Debit"), ("credit", "Credit")])
     # --------------------------
 
     # Field to identify our specific freight lines
@@ -79,41 +80,32 @@ class AccountMoveLine(models.Model):
                 # Key must uniquely identify this specific line (debit vs credit)
                 line.l10n_br_freight_key = frozendict({
                     'move_id': line.move_id.id,
-                    'account_id': line.account_id.id, # Use account to differentiate debit/credit
+                    'account_id': line.account_id.id, # Use account to differentiate
                     'is_l10n_br_freight': True,
-                    # TODO + debit/credit ?
+                    # Added freight_line_type in needed_lines dict to ensure uniqueness if same account used
+                    'freight_line_type': 'debit' if (line.balance > 0 or line.debit > 0) else 'credit',
                 })
             else:
                 line.l10n_br_freight_key = False # Not a freight line
 
-    @api.depends('move_id', 'is_l10n_br_freight', 'display_type') # Add dependencies
+    # Prevent balance calculation from zeroing out our lines
+    @api.depends('move_id', 'is_l10n_br_freight', 'display_type')
     def _compute_balance(self):
         """
         Override to prevent standard invoice logic from zeroing out
         the balance of our custom freight lines.
         """
-        # Separate our freight lines
-        freight_lines = self.filtered(lambda line: line.is_l10n_br_freight)
+        freight_lines = self.filtered(lambda line: line.display_type == 'br_freight')
         other_lines = self - freight_lines
 
         # Let the standard computation run for all other lines
         if other_lines:
             super(AccountMoveLine, other_lines)._compute_balance()
 
-        # For our freight lines, the balance is *already set* correctly by the
-        # _sync_dynamic_line mechanism using the 'needed_freight_lines'.
-        # We simply need to prevent the super method's 'else: line.balance = 0'
-        # from running on these specific lines. By handling them separately and
-        # NOT calling super() on them here, we achieve that.
-        # We don't need to explicitly set the balance again here.
+        # For 'br_freight' lines, the balance is determined by the sync mechanism.
+        # Do nothing here to prevent overriding the synced value.
         for line in freight_lines:
-             # Ensure the balance is preserved if it was set. If for some reason
-             # it wasn't set during sync (unlikely), this won't help, but the
-             # primary goal is prevention of overwriting.
-             pass
-
-
-# -------------------------------------------------------------------------
+            pass # Preserve the balance set by _sync_dynamic_line
 
     discount = fields.Float(
         compute="_compute_discounts",

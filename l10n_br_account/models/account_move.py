@@ -439,16 +439,32 @@ class AccountMove(models.Model):
     ) # Dirty flag
 
 
-    @api.depends('l10n_br_freight_amount', 'move_type', 'partner_id', 'currency_id', 'company_id')
+
+    @api.depends('l10n_br_freight_amount', 'move_type', 'partner_id', 'currency_id', 'company_id', 'company_currency_id', 'date')
     def _compute_needed_freight_lines(self):
-        # ... (keep the compute method exactly as before) ...
+        """Calculates the dictionary of freight lines needed based on the freight amount."""
         for move in self:
             move.needed_freight_lines_dirty = True
             move.needed_freight_lines = False # Default: no lines needed
 
-            if move.move_type == 'out_invoice' and move.l10n_br_freight_amount > 0:
-                amount = move.l10n_br_freight_amount
-                balance = amount # Assuming company currency for simplicity
+            # Ensure it's the correct move type and freight amount exists and accounts are set
+            if (move.move_type == 'out_invoice'
+                    and move.l10n_br_freight_amount > 0
+                    and FREIGHT_EXPENSE_ACCOUNT_ID
+                    and FREIGHT_PAYABLE_ACCOUNT_ID):
+
+                # Determine amounts in both currencies if necessary
+                amount_freight_currency = move.l10n_br_freight_amount
+                if move.currency_id == move.company_currency_id:
+                    balance = amount_freight_currency
+                else:
+                    # Convert freight amount (assumed in move currency) to company currency
+                    balance = move.currency_id._convert(
+                        amount_freight_currency,
+                        move.company_currency_id,
+                        move.company_id,
+                        move.date or fields.Date.context_today(move)
+                    )
 
                 lines_dict = {}
 
@@ -457,20 +473,17 @@ class AccountMove(models.Model):
                     'move_id': move.id,
                     'account_id': FREIGHT_EXPENSE_ACCOUNT_ID,
                     'is_l10n_br_freight': True,
+                    'freight_line_type': 'debit', # Differentiate keys further
                 }
                 debit_line_vals = {
                     'name': _('Freight Expense'),
-                    'display_type': 'br_freight',
-                    #'debit': balance,
-                    #'credit': 0.0,
-                    'balance': balance,
-                    'amount_currency': balance,
-                    #'amount_currency': 0.0,
-                    'currency_id': move.company_currency_id.id,
-                    #'partner_id': move.partner_id.id,
+                    'display_type': 'br_freight', # Use custom type
+                    'balance': balance, # Balance in company currency
+                    'amount_currency': amount_freight_currency, # Amount in move currency
+                    'currency_id': move.currency_id.id, # Currency of the move
+                    'partner_id': move.partner_id.id,
                     'account_id': FREIGHT_EXPENSE_ACCOUNT_ID,
-                    # 'exclude_from_invoice_tab': True,
-                    'is_l10n_br_freight': True, # Make sure flag is set here too
+                    'is_l10n_br_freight': True,
                 }
                 lines_dict[frozendict(debit_key_vals)] = debit_line_vals
 
@@ -479,23 +492,19 @@ class AccountMove(models.Model):
                     'move_id': move.id,
                     'account_id': FREIGHT_PAYABLE_ACCOUNT_ID,
                     'is_l10n_br_freight': True,
+                    'freight_line_type': 'credit', # Differentiate keys further
                 }
                 credit_line_vals = {
                     'name': _('Freight Payable'),
-                    'display_type': 'br_freight',
-                    #'debit': 0.0,
-                    #'credit': balance,
-                    'balance': -balance,
-                    'amount_currency': -balance,
-                    #'amount_currency': 0.0,
-                    'currency_id': move.company_currency_id.id,
-                    #'partner_id': move.partner_id.id, # Or a specific freight partner?
+                    'display_type': 'br_freight', # Use custom type
+                    'balance': -balance, # Balance in company currency (negative)
+                    'amount_currency': -amount_freight_currency, # Amount in move currency (negative)
+                    'currency_id': move.currency_id.id, # Currency of the move
+                    'partner_id': move.partner_id.id, # Or a specific freight partner?
                     'account_id': FREIGHT_PAYABLE_ACCOUNT_ID,
-                    # 'exclude_from_invoice_tab': True,
-                    'is_l10n_br_freight': True, # Make sure flag is set here too
+                    'is_l10n_br_freight': True,
                 }
                 lines_dict[frozendict(credit_key_vals)] = credit_line_vals
-                print("LINES DICT",lines_dict)
 
                 move.needed_freight_lines = lines_dict
             else:
@@ -504,62 +513,27 @@ class AccountMove(models.Model):
     # Override the main sync method to include our freight lines
     @contextmanager
     def _sync_dynamic_lines(self, container):
-        # --- ADDED: Use our own recursion flag ---
-        # Use the standard helper, but with a custom key
         with self._disable_recursion(container, 'skip_l10n_br_freight_sync') as freight_disabled:
-            # Now, call the original sync logic which handles its own flag ('skip_invoice_sync')
+            # Call super first to let core sync happen
             with super()._sync_dynamic_lines(container) as orig_cm:
                 # Use ExitStack for potentially adding more syncs later if needed
                 with ExitStack() as stack:
-                    # --- MODIFIED: Check our flag before adding freight sync ---
+                    # Add our freight sync if not recursively called
                     if not freight_disabled:
-                        # Only add our freight sync if we are NOT in a recursive call triggered by it
                         freight_container = {'records': container['records'].filtered(
                             lambda m: m.move_type == 'out_invoice'
                         )}
-                        # Check if there's anything to sync to avoid unnecessary context entry
                         if freight_container['records']:
                             stack.enter_context(self._sync_dynamic_line(
                                 existing_key_fname='l10n_br_freight_key',
                                 needed_vals_fname='needed_freight_lines',
                                 needed_dirty_fname='needed_freight_lines_dirty',
-                                line_type='product', # Keep as product or other non-special type
+                                line_type='br_freight', # Use custom display type
                                 container=freight_container,
                             ))
 
                     # Yield control back to the original context manager AND the caller
                     yield orig_cm
-
-    # Override the main sync method to include our freight lines
-    # @contextmanager
-    def TODO_sync_dynamic_lines(self, container):
-        # Use ExitStack to manage multiple context managers cleanly
-        # Call super() to get the original context manager
-        with super()._sync_dynamic_lines(container) as orig_cm:
-            # Now, add our freight line synchronization *within* the original context
-            with ExitStack() as stack:
-                # The original context manager from super() might already be doing things,
-                # make sure it continues to execute properly by yielding from it if necessary
-                # Note: The original _sync_dynamic_lines uses ExitStack itself, so we
-                #       just need to add our context *before* the original yield happens.
-                #       The structure of the super method handles the nested yield.
-
-                # Add our specific freight line sync
-                freight_container = {'records': container['records'].filtered(
-                    # Only sync if relevant fields are present or freight amount exists
-                    lambda m: m.move_type == 'out_invoice'
-                )}
-                stack.enter_context(self._sync_dynamic_line(
-                    existing_key_fname='l10n_br_freight_key',
-                    needed_vals_fname='needed_freight_lines',
-                    needed_dirty_fname='needed_freight_lines_dirty',
-                    line_type='product', # Or a custom one if needed, but 'product' works if excluded from tab
-                    container=freight_container,
-                ))
-
-                # Crucially, yield to allow the original code block (create/write)
-                # and the original context manager's yield point to execute
-                yield orig_cm # This yields control back to the caller of _sync_dynamic_lines
 
     def update_payment_term_number(self):
         payment_term_lines = self.line_ids.filtered(
