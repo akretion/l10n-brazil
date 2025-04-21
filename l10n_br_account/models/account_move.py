@@ -4,7 +4,7 @@
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
 
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
@@ -54,6 +54,9 @@ MOVE_TAX_USER_TYPE = {
 # by account.move fields:
 SHADOWED_FIELDS = ["company_id", "currency_id", "user_id", "partner_id"]
 
+
+FREIGHT_EXPENSE_ACCOUNT_ID = 11
+FREIGHT_PAYABLE_ACCOUNT_ID = 309
 
 class AccountMove(models.Model):
     _name = "account.move"
@@ -407,7 +410,7 @@ class AccountMove(models.Model):
         return [(protected, rec) for rec in records] if protected else []
 
     @contextmanager
-    def _sync_dynamic_lines(self, container):
+    def TODO_sync_dynamic_lines(self, container):
         with self._disable_recursion(container, "skip_invoice_sync") as disabled:
             if disabled:
                 yield
@@ -415,6 +418,148 @@ class AccountMove(models.Model):
         with super()._sync_dynamic_lines(container):
             yield
         self.update_payment_term_number()
+
+    # -------------------------------------------------------
+
+    l10n_br_freight_amount = fields.Monetary(
+        string="Freight Amount (BR)",
+        currency_field='company_currency_id', # Or currency_id depending on needs
+        copy=False,
+        tracking=True,
+        help="Total freight amount for this operation (used for Brazilian localization line generation)."
+    )
+
+    # Computed field defining the freight lines that SHOULD exist
+    needed_freight_lines = fields.Binary(
+        compute='_compute_needed_freight_lines',
+        exportable=False
+    )
+    needed_freight_lines_dirty = fields.Boolean(
+        compute='_compute_needed_freight_lines'
+    ) # Dirty flag
+
+
+    @api.depends('l10n_br_freight_amount', 'move_type', 'partner_id', 'currency_id', 'company_id')
+    def _compute_needed_freight_lines(self):
+        # ... (keep the compute method exactly as before) ...
+        for move in self:
+            move.needed_freight_lines_dirty = True
+            move.needed_freight_lines = False # Default: no lines needed
+
+            if move.move_type == 'out_invoice' and move.l10n_br_freight_amount > 0:
+                amount = move.l10n_br_freight_amount
+                balance = amount # Assuming company currency for simplicity
+
+                lines_dict = {}
+
+                # --- Debit Line (Expense) ---
+                debit_key_vals = {
+                    'move_id': move.id,
+                    'account_id': FREIGHT_EXPENSE_ACCOUNT_ID,
+                    'is_l10n_br_freight': True,
+                }
+                debit_line_vals = {
+                    'name': _('Freight Expense'),
+                    'display_type': 'br_freight',
+                    #'debit': balance,
+                    #'credit': 0.0,
+                    'balance': balance,
+                    'amount_currency': balance,
+                    #'amount_currency': 0.0,
+                    'currency_id': move.company_currency_id.id,
+                    #'partner_id': move.partner_id.id,
+                    'account_id': FREIGHT_EXPENSE_ACCOUNT_ID,
+                    # 'exclude_from_invoice_tab': True,
+                    'is_l10n_br_freight': True, # Make sure flag is set here too
+                }
+                lines_dict[frozendict(debit_key_vals)] = debit_line_vals
+
+                # --- Credit Line (Payable/Supplier) ---
+                credit_key_vals = {
+                    'move_id': move.id,
+                    'account_id': FREIGHT_PAYABLE_ACCOUNT_ID,
+                    'is_l10n_br_freight': True,
+                }
+                credit_line_vals = {
+                    'name': _('Freight Payable'),
+                    'display_type': 'br_freight',
+                    #'debit': 0.0,
+                    #'credit': balance,
+                    'balance': -balance,
+                    'amount_currency': -balance,
+                    #'amount_currency': 0.0,
+                    'currency_id': move.company_currency_id.id,
+                    #'partner_id': move.partner_id.id, # Or a specific freight partner?
+                    'account_id': FREIGHT_PAYABLE_ACCOUNT_ID,
+                    # 'exclude_from_invoice_tab': True,
+                    'is_l10n_br_freight': True, # Make sure flag is set here too
+                }
+                lines_dict[frozendict(credit_key_vals)] = credit_line_vals
+                print("LINES DICT",lines_dict)
+
+                move.needed_freight_lines = lines_dict
+            else:
+                move.needed_freight_lines = False # Ensure it's reset if conditions not met
+
+    # Override the main sync method to include our freight lines
+    @contextmanager
+    def _sync_dynamic_lines(self, container):
+        # --- ADDED: Use our own recursion flag ---
+        # Use the standard helper, but with a custom key
+        with self._disable_recursion(container, 'skip_l10n_br_freight_sync') as freight_disabled:
+            # Now, call the original sync logic which handles its own flag ('skip_invoice_sync')
+            with super()._sync_dynamic_lines(container) as orig_cm:
+                # Use ExitStack for potentially adding more syncs later if needed
+                with ExitStack() as stack:
+                    # --- MODIFIED: Check our flag before adding freight sync ---
+                    if not freight_disabled:
+                        # Only add our freight sync if we are NOT in a recursive call triggered by it
+                        freight_container = {'records': container['records'].filtered(
+                            lambda m: m.move_type == 'out_invoice'
+                        )}
+                        # Check if there's anything to sync to avoid unnecessary context entry
+                        if freight_container['records']:
+                            stack.enter_context(self._sync_dynamic_line(
+                                existing_key_fname='l10n_br_freight_key',
+                                needed_vals_fname='needed_freight_lines',
+                                needed_dirty_fname='needed_freight_lines_dirty',
+                                line_type='product', # Keep as product or other non-special type
+                                container=freight_container,
+                            ))
+
+                    # Yield control back to the original context manager AND the caller
+                    yield orig_cm
+
+    # Override the main sync method to include our freight lines
+    # @contextmanager
+    def TODO_sync_dynamic_lines(self, container):
+        # Use ExitStack to manage multiple context managers cleanly
+        # Call super() to get the original context manager
+        with super()._sync_dynamic_lines(container) as orig_cm:
+            # Now, add our freight line synchronization *within* the original context
+            with ExitStack() as stack:
+                # The original context manager from super() might already be doing things,
+                # make sure it continues to execute properly by yielding from it if necessary
+                # Note: The original _sync_dynamic_lines uses ExitStack itself, so we
+                #       just need to add our context *before* the original yield happens.
+                #       The structure of the super method handles the nested yield.
+
+                # Add our specific freight line sync
+                freight_container = {'records': container['records'].filtered(
+                    # Only sync if relevant fields are present or freight amount exists
+                    lambda m: m.move_type == 'out_invoice'
+                )}
+                stack.enter_context(self._sync_dynamic_line(
+                    existing_key_fname='l10n_br_freight_key',
+                    needed_vals_fname='needed_freight_lines',
+                    needed_dirty_fname='needed_freight_lines_dirty',
+                    line_type='product', # Or a custom one if needed, but 'product' works if excluded from tab
+                    container=freight_container,
+                ))
+
+                # Crucially, yield to allow the original code block (create/write)
+                # and the original context manager's yield point to execute
+                yield orig_cm # This yields control back to the caller of _sync_dynamic_lines
 
     def update_payment_term_number(self):
         payment_term_lines = self.line_ids.filtered(

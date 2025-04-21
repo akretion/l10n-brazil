@@ -23,6 +23,13 @@ SHADOWED_FIELDS = [
 ]
 
 
+from contextlib import ExitStack, contextmanager
+
+# --- Define placeholder account IDs (same as in account_move.py) ---
+FREIGHT_EXPENSE_ACCOUNT_ID = 111
+FREIGHT_PAYABLE_ACCOUNT_ID = 222
+
+
 class AccountMoveLine(models.Model):
     _name = "account.move.line"
     _fiscal_decorator_model = "l10n_br_fiscal.document.line"
@@ -45,6 +52,68 @@ class AccountMoveLine(models.Model):
         comodel_name="l10n_br_fiscal.document.type",
         related="move_id.document_type_id",
     )
+
+    display_type = fields.Selection(selection_add=[('br_freight', "Freight")], ondelete={"br_freight":  lambda recs: recs.write({"display_type": "product"})})
+
+    # --------------------------
+
+    # Field to identify our specific freight lines
+    is_l10n_br_freight = fields.Boolean(
+        string="Is BR Freight Line",
+        default=False,
+        copy=False,
+        help="Technical field to identify lines generated for Brazilian freight."
+    )
+
+    # Computed key used by _sync_dynamic_line to match needed vs existing lines
+    l10n_br_freight_key = fields.Binary(
+        compute='_compute_l10n_br_freight_key',
+        exportable=False
+    )
+
+    @api.depends('is_l10n_br_freight', 'account_id', 'move_id')
+    def _compute_l10n_br_freight_key(self):
+        """Computes a unique key for Brazilian freight lines."""
+        for line in self:
+            if line.is_l10n_br_freight:
+                # Key must uniquely identify this specific line (debit vs credit)
+                line.l10n_br_freight_key = frozendict({
+                    'move_id': line.move_id.id,
+                    'account_id': line.account_id.id, # Use account to differentiate debit/credit
+                    'is_l10n_br_freight': True,
+                    # TODO + debit/credit ?
+                })
+            else:
+                line.l10n_br_freight_key = False # Not a freight line
+
+    @api.depends('move_id', 'is_l10n_br_freight', 'display_type') # Add dependencies
+    def _compute_balance(self):
+        """
+        Override to prevent standard invoice logic from zeroing out
+        the balance of our custom freight lines.
+        """
+        # Separate our freight lines
+        freight_lines = self.filtered(lambda line: line.is_l10n_br_freight)
+        other_lines = self - freight_lines
+
+        # Let the standard computation run for all other lines
+        if other_lines:
+            super(AccountMoveLine, other_lines)._compute_balance()
+
+        # For our freight lines, the balance is *already set* correctly by the
+        # _sync_dynamic_line mechanism using the 'needed_freight_lines'.
+        # We simply need to prevent the super method's 'else: line.balance = 0'
+        # from running on these specific lines. By handling them separately and
+        # NOT calling super() on them here, we achieve that.
+        # We don't need to explicitly set the balance again here.
+        for line in freight_lines:
+             # Ensure the balance is preserved if it was set. If for some reason
+             # it wasn't set during sync (unlikely), this won't help, but the
+             # primary goal is prevention of overwriting.
+             pass
+
+
+# -------------------------------------------------------------------------
 
     discount = fields.Float(
         compute="_compute_discounts",
