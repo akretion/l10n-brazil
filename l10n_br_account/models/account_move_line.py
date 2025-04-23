@@ -51,6 +51,10 @@ class AccountMoveLine(models.Model):
         store=True,
     )
 
+    name = fields.Char(inverse="_inverse_name")
+    quantity = fields.Float(inverse="_inverse_quantity")
+    price_unit = fields.Float(inverse="_inverse_price_unit")
+
     payment_term_number = fields.Char(
         help="Stores the installment number in the format 'current-total'. "
         "For example, '1-3' for the first of three installments, '2-3' for the second,"
@@ -95,6 +99,27 @@ class AccountMoveLine(models.Model):
         from account.move.line."""
         return SHADOWED_FIELDS
 
+    def _inverse_product_id(self):
+        for line in self:
+            if line.fiscal_document_line_id:
+                line.fiscal_document_line_id.product_id = line.product_id
+        return super()._inverse_product_id()
+
+    def _inverse_name(self):
+        for line in self:
+            if line.fiscal_document_line_id:
+                line.fiscal_document_line_id.name = line.name
+
+    def _inverse_quantity(self):
+        for line in self:
+            if line.fiscal_document_line_id:
+                line.fiscal_document_line_id.quantity = line.quantity
+
+    def _inverse_price_unit(self):
+        for line in self:
+            if line.fiscal_document_line_id:
+                line.fiscal_document_line_id.price_unit = line.price_unit
+
     @api.model_create_multi
     def create(self, vals_list):
         for values in vals_list:
@@ -130,8 +155,6 @@ class AccountMoveLine(models.Model):
                 )
             )
             values["document_id"] = fiscal_doc_id  # pass through the _inherits system
-
-        self._inject_shadowed_fields(vals_list)
 
         # This reordering bellow is crucial to ensure accurate linkage between
         # account.move.line (aml) and the fiscal document line. In the fiscal create a

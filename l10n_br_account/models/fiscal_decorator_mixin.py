@@ -75,10 +75,3 @@ class FiscalDecoratorMixin(models.AbstractModel):
             field = self._fields.get(field_name)
             field.required = False  # unset the required = True assignement
         return res
-
-    @api.model
-    def _inject_shadowed_fields(self, vals_list):
-        for vals in vals_list:
-            for field in self._shadowed_fields():
-                if field in vals:
-                    vals[f"fiscal_proxy_{field}"] = vals[field]
