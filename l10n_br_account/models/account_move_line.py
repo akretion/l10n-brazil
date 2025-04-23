@@ -156,6 +156,8 @@ class AccountMoveLine(models.Model):
             )
             values["document_id"] = fiscal_doc_id  # pass through the _inherits system
 
+        self._inject_shadowed_fields(vals_list)  # TODO find out why required
+
         # This reordering bellow is crucial to ensure accurate linkage between
         # account.move.line (aml) and the fiscal document line. In the fiscal create a
         # fiscal document line, leaving only those that should be created. Proper
