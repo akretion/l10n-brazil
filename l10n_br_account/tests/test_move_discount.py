@@ -87,3 +87,6 @@ class TestInvoiceDiscount(TransactionCase):
         self.assertEqual(self.move_id.invoice_line_ids.discount_value, 100)
         self.assertEqual(self.move_id.invoice_line_ids.discount, 10)
         self.assertEqual(self.move_id.invoice_line_ids.price_subtotal, 900)
+        for line in self.move_id.line_ids:
+            print("BBBBB", line.name, line.account_id.name, line.debit, line.credit)
+#

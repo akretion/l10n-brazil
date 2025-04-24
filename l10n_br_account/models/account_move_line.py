@@ -55,7 +55,6 @@ class AccountMoveLine(models.Model):
 
     display_type = fields.Selection(selection_add=[('br_freight', "Freight")], ondelete={"br_freight":  lambda recs: recs.write({"display_type": "product"})})
 
-    freight_line_type = fields.Selection([("debit", "Debit"), ("credit", "Credit")])
     # --------------------------
 
     # Field to identify our specific freight lines
@@ -80,32 +79,13 @@ class AccountMoveLine(models.Model):
                 # Key must uniquely identify this specific line (debit vs credit)
                 line.l10n_br_freight_key = frozendict({
                     'move_id': line.move_id.id,
-                    'account_id': line.account_id.id, # Use account to differentiate
+                    'account_id': line.account_id.id,
                     'is_l10n_br_freight': True,
                     # Added freight_line_type in needed_lines dict to ensure uniqueness if same account used
-                    'freight_line_type': 'debit' if (line.balance > 0 or line.debit > 0) else 'credit',
+                    #                   'freight_line_type': 'debit' if (line.balance > 0 or line.debit > 0) else 'credit',
                 })
             else:
                 line.l10n_br_freight_key = False # Not a freight line
-
-    # Prevent balance calculation from zeroing out our lines
-    @api.depends('move_id', 'is_l10n_br_freight', 'display_type')
-    def _compute_balance(self):
-        """
-        Override to prevent standard invoice logic from zeroing out
-        the balance of our custom freight lines.
-        """
-        freight_lines = self.filtered(lambda line: line.display_type == 'br_freight')
-        other_lines = self - freight_lines
-
-        # Let the standard computation run for all other lines
-        if other_lines:
-            super(AccountMoveLine, other_lines)._compute_balance()
-
-        # For 'br_freight' lines, the balance is determined by the sync mechanism.
-        # Do nothing here to prevent overriding the synced value.
-        for line in freight_lines:
-            pass # Preserve the balance set by _sync_dynamic_line
 
     discount = fields.Float(
         compute="_compute_discounts",
@@ -361,11 +341,9 @@ class AccountMoveLine(models.Model):
         to the account.tax#compute_all method.
         """
         result = super()._compute_totals()
-        if not self.move_id.fiscal_operation_id:
-            return result
 
         for line in self:
-            if line.display_type != "product":
+            if line.display_type != "product" or not line.fiscal_operation_line_id:
                 continue  # handled in super method
 
             line_discount_price_unit = line.price_unit * (1 - (line.discount / 100.0))
@@ -414,8 +392,10 @@ class AccountMoveLine(models.Model):
                 line.insurance_value
                 + line.other_value
                 + line.freight_value
+                + 100
                 - line.icms_relief_value
             )
+            print("---- LINE", line.name, line.freight_value, line.price_total)
             # TODO MIGRATE v16 (that is make icms_relief_value really work),
             # for icms_relief_value see https://github.com/OCA/l10n-brazil/pull/3037
         return result

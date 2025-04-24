@@ -80,7 +80,7 @@ class TestCustomerInvoice(TransactionCase):
             )
         )
     def test_freight(self):
-        self.invoice_1.l10n_br_freight_amount = 100
+        self.invoice_1.amount_freight_value = 100
         for aml in self.invoice_1.line_ids:
             print("----------", aml.id, aml.name, aml.account_id.display_name, aml.debit, aml.credit)
 

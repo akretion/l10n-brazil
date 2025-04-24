@@ -421,7 +421,8 @@ class AccountMove(models.Model):
 
     # -------------------------------------------------------
 
-    l10n_br_freight_amount = fields.Monetary(
+    # TODO remove inherited!
+    amount_freight_value = fields.Monetary(
         string="Freight Amount (BR)",
         currency_field='company_currency_id', # Or currency_id depending on needs
         copy=False,
@@ -440,7 +441,7 @@ class AccountMove(models.Model):
 
 
 
-    @api.depends('l10n_br_freight_amount', 'move_type', 'partner_id', 'currency_id', 'company_id', 'company_currency_id', 'date')
+    @api.depends('amount_freight_value', 'move_type', 'partner_id', 'currency_id', 'company_id', 'company_currency_id', 'date')
     def _compute_needed_freight_lines(self):
         """Calculates the dictionary of freight lines needed based on the freight amount."""
         for move in self:
@@ -449,23 +450,11 @@ class AccountMove(models.Model):
 
             # Ensure it's the correct move type and freight amount exists and accounts are set
             if (move.move_type == 'out_invoice'
-                    and move.l10n_br_freight_amount > 0
-                    and FREIGHT_EXPENSE_ACCOUNT_ID
-                    and FREIGHT_PAYABLE_ACCOUNT_ID):
+                    and move.amount_freight_value > 0
+                    and move.company_id.receivable_freight_account_id):  # TODO or from operation
 
                 # Determine amounts in both currencies if necessary
-                amount_freight_currency = move.l10n_br_freight_amount
-                if move.currency_id == move.company_currency_id:
-                    balance = amount_freight_currency
-                else:
-                    # Convert freight amount (assumed in move currency) to company currency
-                    balance = move.currency_id._convert(
-                        amount_freight_currency,
-                        move.company_currency_id,
-                        move.company_id,
-                        move.date or fields.Date.context_today(move)
-                    )
-
+                amount_freight_currency = move.amount_freight_value
                 lines_dict = {}
 
                 # --- Debit Line (Expense) ---
@@ -473,38 +462,33 @@ class AccountMove(models.Model):
                     'move_id': move.id,
                     'account_id': FREIGHT_EXPENSE_ACCOUNT_ID,
                     'is_l10n_br_freight': True,
-                    'freight_line_type': 'debit', # Differentiate keys further
+                    #'freight_line_type': 'debit', # Differentiate keys further
                 }
                 debit_line_vals = {
                     'name': _('Freight Expense'),
                     'display_type': 'br_freight', # Use custom type
-                    'balance': balance, # Balance in company currency
                     'amount_currency': amount_freight_currency, # Amount in move currency
-                    'currency_id': move.currency_id.id, # Currency of the move
-                    'partner_id': move.partner_id.id,
                     'account_id': FREIGHT_EXPENSE_ACCOUNT_ID,
                     'is_l10n_br_freight': True,
                 }
-                lines_dict[frozendict(debit_key_vals)] = debit_line_vals
+                #lines_dict[frozendict(debit_key_vals)] = debit_line_vals
 
                 # --- Credit Line (Payable/Supplier) ---
                 credit_key_vals = {
                     'move_id': move.id,
-                    'account_id': FREIGHT_PAYABLE_ACCOUNT_ID,
+                    'account_id': move.company_id.receivable_freight_account_id.id,
                     'is_l10n_br_freight': True,
-                    'freight_line_type': 'credit', # Differentiate keys further
+                    # 'freight_line_type': 'credit', # Differentiate keys further
                 }
                 credit_line_vals = {
                     'name': _('Freight Payable'),
                     'display_type': 'br_freight', # Use custom type
-                    'balance': -balance, # Balance in company currency (negative)
                     'amount_currency': -amount_freight_currency, # Amount in move currency (negative)
-                    'currency_id': move.currency_id.id, # Currency of the move
-                    'partner_id': move.partner_id.id, # Or a specific freight partner?
-                    'account_id': FREIGHT_PAYABLE_ACCOUNT_ID,
+                    'account_id': move.company_id.receivable_freight_account_id.id,
                     'is_l10n_br_freight': True,
                 }
                 lines_dict[frozendict(credit_key_vals)] = credit_line_vals
+                print("LINES dict", lines_dict)
 
                 move.needed_freight_lines = lines_dict
             else:
@@ -557,10 +541,10 @@ class AccountMove(models.Model):
         )
         return invoice
 
-    def write(self, values):
-        self._inject_shadowed_fields([values])
-        result = super().write(values)
-        return result
+        #def write(self, values):
+        #self._inject_shadowed_fields([values])
+        #result = super().write(values)
+        #return result
 
     def unlink(self):
         """Allow to delete draft or cancelled invoices"""
