@@ -31,22 +31,30 @@ from ..constants.fiscal import (
 
 
 class Document(models.Model):
-    """Implementação base dos documentos fiscais
+    """
+    Base implementation for Brazilian fiscal documents.
 
-    Devemos sempre ter em mente que o modelo que vai usar este módulo abstrato
-     tem diversos metodos importantes e a intenção que os módulos da OCA que
-     extendem este modelo, funcionem se possível sem a necessidade de
-     codificação extra.
+    This model serves as the foundational structure for various fiscal
+    documents within the Brazilian localization. It's designed to be
+    extensible, allowing other OCA modules to build upon it, ideally
+    minimizing the need for additional custom coding for common fiscal
+    document functionalities.
 
-    É preciso também estar atento que o documento fiscal tem dois estados:
+    Key aspects to note:
+    - The fiscal document manages two primary states:
+        - Electronic Document State (`state_edoc`): Reflects the status
+          of the document in its electronic lifecycle (e.g., Draft,
+          Authorized, Cancelled).
+        - Fiscal State (`state_fiscal`): Represents the document's status
+          from a purely fiscal accounting perspective (e.g., Regular,
+          Cancelled for fiscal purposes). This state is less automated
+          and often managed by the fiscal responsible to ensure correct
+          reporting, such as in SPED Fiscal.
 
-    - Estado do documento eletrônico / não eletônico: state_edoc
-    - Estado FISCAL: state_fiscal
-
-    O estado fiscal é um campo que é alterado apenas algumas vezes pelo código
-    e é de responsabilidade do responsável fiscal pela empresa de manter a
-    integridade do mesmo, pois ele não tem um fluxo realmente definido e
-    interfere no lançamento do registro no arquivo do SPED FISCAL.
+    This model inherits common fields and methods from
+    `l10n_br_fiscal.document.mixin` and includes features for document
+    numbering, key validation, partner and company fiscal details, line
+    items, and workflows for subsequent document generation and returns.
     """
 
     _name = "l10n_br_fiscal.document"
@@ -689,30 +697,40 @@ class Document(models.Model):
 
     @api.onchange("fiscal_operation_id")
     def _onchange_fiscal_operation_id(self):
+        # Call the super method from document.mixin.methods.
+        # This will handle:
+        # - Setting self.fiscal_operation_type
+        # - Setting self.edoc_purpose
+        # - Rebuilding self.document_subsequent_ids using odoo.fields.Command
         result = super()._onchange_fiscal_operation_id()
+
+        # Specific logic for document.py after super() has run.
+        # The assignments to fiscal_operation_type and edoc_purpose might be
+        # redundant now if super() handles them comprehensively.
+        # Review if these are still needed or if super() is sufficient.
         if self.fiscal_operation_id:
+            # If super() already sets these based on self.fiscal_operation_id,
+            # these lines might not be strictly necessary unless there's a reason
+            # for them to be re-set or set differently in this child class.
             self.fiscal_operation_type = self.fiscal_operation_id.fiscal_operation_type
             self.edoc_purpose = self.fiscal_operation_id.edoc_purpose
 
-        if self.issuer == DOCUMENT_ISSUER_COMPANY and not self.document_type_id:
+        # This logic for setting document_type_id seems specific to
+        # 'document.py' context (e.g., based on 'self.issuer' which
+        # might be a field on 'document.py' or its mixins).
+        # Keep this if it's not handled by the mixin or needs to be
+        # explicitly here.
+        if (
+            self.fiscal_operation_id
+            and self.issuer == DOCUMENT_ISSUER_COMPANY
+            and not self.document_type_id
+        ):  # Only set if not already set
             self.document_type_id = self.company_id.document_type_id
 
-        subsequent_documents = [(6, 0, {})]
-        for subsequent_id in self.fiscal_operation_id.mapped(
-            "operation_subsequent_ids"
-        ):
-            subsequent_documents.append(
-                (
-                    0,
-                    0,
-                    {
-                        "source_document_id": self.id,
-                        "subsequent_operation_id": subsequent_id.id,
-                        "fiscal_operation_id": subsequent_id.subsequent_operation_id.id,
-                    },
-                )
-            )
-        self.document_subsequent_ids = subsequent_documents
+        # The logic for rebuilding 'document_subsequent_ids' with tuple commands
+        # has been removed from here. The super() call now handles this using
+        # odoo.fields.Command via the updated mixin method.
+
         return result
 
     def _prepare_referenced_subsequent(self, doc_referenced):

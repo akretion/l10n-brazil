@@ -1,7 +1,7 @@
 # Copyright (C) 2019  Renato Lima - Akretion <renato.lima@akretion.com.br>
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
-from odoo import api, models
+from odoo import Command, api, models
 
 from ..constants.fiscal import (
     COMMENT_TYPE_COMMERCIAL,
@@ -11,6 +11,28 @@ from ..constants.fiscal import (
 
 
 class FiscalDocumentMixinMethods(models.AbstractModel):
+    """
+    Provides the method implementations for l10n_br_fiscal.document.mixin.
+
+    These methods are extracted into this separate mixin due to the way
+    l10n_br_fiscal.document.line is incorporated into account.move
+    by the l10n_br_account module.
+
+    Specifically:
+    - In l10n_br_account, fields from l10n_br_fiscal.document
+      are added to account.move using Odoo's `_inherits` (composition)
+      mechanism.
+    - The methods in *this* mixin, however, are intended to be inherited
+      using the standard `_inherit` mechanism.
+
+    This separation is crucial because `_inherits` handles field composition
+    but does not inherit methods. Thus, `_inherit` is used to bring in
+    these methods. If these methods were defined in the same class as the
+    fields of l10n_br_fiscal.document.mixin (which are subject to
+    `_inherits`), and account.move.line also used `_inherit` on that
+    single class, the fields would be duplicated.
+    """
+
     _name = "l10n_br_fiscal.document.mixin.methods"
     _description = "Fiscal Document Mixin Methods"
 
@@ -37,6 +59,21 @@ class FiscalDocumentMixinMethods(models.AbstractModel):
 
     @api.onchange("fiscal_operation_id")
     def _onchange_fiscal_operation_id(self):
+        """
+        Handles changes to the 'fiscal_operation_id' field.
+
+        When the fiscal operation changes, this method:
+        1. Updates related fields on the document like 'fiscal_operation_type'
+           and 'edoc_purpose'.
+        2. Sets a default 'document_type_id' from the company if not already set
+           and the issuer is the company.
+        3. Clears and rebuilds the 'document_subsequent_ids' list based on
+           the 'operation_subsequent_ids' defined on the new fiscal operation.
+           This ensures that the placeholders for subsequent documents reflect
+           the selected fiscal operation.
+        If 'fiscal_operation_id' is cleared, it also clears the
+        'document_subsequent_ids'.
+        """
         if self.fiscal_operation_id:
             self.fiscal_operation_type = self.fiscal_operation_id.fiscal_operation_type
             self.edoc_purpose = self.fiscal_operation_id.edoc_purpose
@@ -44,27 +81,59 @@ class FiscalDocumentMixinMethods(models.AbstractModel):
             if self.issuer == DOCUMENT_ISSUER_COMPANY and not self.document_type_id:
                 self.document_type_id = self.company_id.document_type_id
 
-            subsequent_documents = [(6, 0, {})]
-            for subsequent_id in self.fiscal_operation_id.mapped(
-                "operation_subsequent_ids"
-            ):
-                subsequent_documents.append(
-                    (
-                        0,
-                        0,
+            # Rebuild document_subsequent_ids using odoo.fields.Command
+            # This will first clear all existing subsequent document trackers
+            # and then create new ones based on the selected fiscal operation.
+
+            commands_for_subsequent_docs = [Command.clear()]
+
+            for (
+                subsequent_definition
+            ) in self.fiscal_operation_id.operation_subsequent_ids:
+                commands_for_subsequent_docs.append(
+                    Command.create(
                         {
-                            "source_document_id": self.id,
-                            "subsequent_operation_id": subsequent_id.id,
+                            # 'source_document_id': self.id,
+                            # This is typically handled by Odoo's ORM
+                            # if 'document_subsequent_ids' has a correct
+                            # inverse_name on the target model.
+                            # Explicitly setting self.id here can be problematic
+                            # for new records (before initial save).
+                            "subsequent_operation_id": subsequent_definition.id,
                             "fiscal_operation_id": (
-                                subsequent_id.subsequent_operation_id.id
-                            ),
-                        },
+                                subsequent_definition.subsequent_operation_id
+                            ).id,
+                            # Add any other fields that need to be defaulted
+                            # from 'subsequent_definition'
+                            # or have other default values for the
+                            # 'document_subsequent_ids' model.
+                        }
                     )
                 )
-            self.document_subsequent_ids = subsequent_documents
+            self.document_subsequent_ids = commands_for_subsequent_docs
+
+        else:
+            # If fiscal_operation_id is cleared, ensure related fields are also cleared
+            # or reset to appropriate defaults.
+            self.fiscal_operation_type = False
+            self.edoc_purpose = False
+            # Consider if document_type_id should be cleared or reset if it was set by
+            # this onchange
+
+            # Clear subsequent document trackers as well
+            self.document_subsequent_ids = [Command.clear()]
 
     def _get_amount_lines(self):
-        """Get object lines instaces used to compute fields"""
+        """
+        Hook method to retrieve the document lines used for amount calculations.
+
+        This method should be overridden by models that inherit this mixin
+        if their fiscal document lines are stored in a field other than
+        `fiscal_line_ids`. The returned recordset should contain line objects
+        that have the fiscal amount fields to be summed.
+
+        :return: A recordset of fiscal document line objects.
+        """
         return self.mapped("fiscal_line_ids")
 
     def _get_product_amount_lines(self):
@@ -98,6 +167,17 @@ class FiscalDocumentMixinMethods(models.AbstractModel):
                 doc.document_serie_id = False
 
     def _compute_fiscal_amount(self):
+        """
+        Compute and sum various fiscal amounts from the document lines.
+
+        This method iterates over fields prefixed with 'amount_' (as determined
+        by `_get_amount_fields`) and sums corresponding values from the lines
+        retrieved by `_get_amount_lines`.
+
+        It handles cases where delivery costs (freight, insurance, other) are
+        defined at the document total level rather than per line.
+        """
+
         fields = self._get_amount_fields()
         for doc in self:
             values = {key: 0.0 for key in fields}
@@ -151,12 +231,17 @@ class FiscalDocumentMixinMethods(models.AbstractModel):
 
     def _get_fiscal_partner(self):
         """
-        Meant to be overriden when the l10n_br_fiscal.document partner_id should not
-        be the same as the sale.order, purchase.order, account.move (...) partner_id.
+        Hook method to determine the fiscal partner for the document.
 
-        (In the case of invoicing, the invoicing partner set by the user should
-        get priority over any invoicing contact returned by address_get.)
+        This method is designed to be overridden in implementing models if the
+        partner relevant for fiscal purposes (e.g., for tax calculations,
+        final consumer status) is different from the main `partner_id`
+        of the document record. For instance, an invoice might use a specific
+        invoicing contact derived from the main partner.
+
+        :return: A `res.partner` recordset representing the fiscal partner.
         """
+
         self.ensure_one()
         return self.partner_id
 
