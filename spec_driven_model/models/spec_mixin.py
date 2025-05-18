@@ -166,6 +166,9 @@ class SpecMixin(models.AbstractModel):
             ]
             model._auto_fill_access_data(self.env, odoo_module, access_data)
 
+            if hasattr(model, '_create_default_spec_views'):
+                model._create_default_spec_views(self.env, odoo_module)
+
         self.env["ir.model.access"].load(access_fields, access_data)
         self.env.registry.init_models(
             self.env.cr, remaining_models, {"module": odoo_module}
