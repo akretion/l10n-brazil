@@ -34,7 +34,7 @@ class Item(models.AbstractModel):
     poxsd10_USPrice = fields.Float(
         xsd_type="xsd:decimal", xsd_required=True, string="USPrice"
     )
-    poxsd10_comment = fields.Float(xsd_required=True, string="comment")
+    poxsd10_comment = fields.Char(xsd_required=True, string="comment")
     poxsd10_shipDate = fields.Float(string="shipDate")
     poxsd10_partNum = fields.Float(xsd_type="tns:SKU", string="partNum")
 
@@ -81,7 +81,7 @@ class PurchaseOrderType(models.AbstractModel):
         string="billTo",
         comodel_name="poxsd.10.usaddress",
     )
-    poxsd10_comment = fields.Float(string="comment")
+    poxsd10_comment = fields.Char(string="comment")
     poxsd10_items = fields.Many2one(
         xsd_type="tns:Items",
         xsd_required=True,
