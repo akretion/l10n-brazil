@@ -53,9 +53,11 @@ class AccountMoveSimpleNacional(AccountMoveBRCommon):
             company_name = "empresa 1 Simples Nacional"
         else:
             company_name = "empresa 2 Simples Nacional"
-        chart_template = cls.env.ref(
-            "l10n_br_coa_simple.l10n_br_coa_simple_chart_template"
-        )
+
+        # tests should run both with l10n_generic_coa and
+        # chart_template = cls.env.ref(
+        #     "l10n_br_coa_generic.l10n_br_coa_simple"
+        # )
         res = super().setup_company_data(
             company_name,
             chart_template,
@@ -73,7 +75,6 @@ class AccountMoveSimpleNacional(AccountMoveBRCommon):
             annual_revenue=815000.0,
             **kwargs,
         )
-        chart_template.load_fiscal_taxes()
         return res
 
     def test_company_sn_config(self):
@@ -124,7 +125,13 @@ class AccountMoveSimpleNacional(AccountMoveBRCommon):
             "name": "ICMS - Simples Nacional",
             "product_id": False,
             "account_id": self.env["account.account"]
-            .search([("name", "=", "ICMS a Recolher")], order="id DESC", limit=1)
+            .search(
+                [
+                    ("name", "=", "ICMS SN a Recolher"),
+                    ("company_id", "=", self.company_data["company"].id),
+                ],
+                limit=1,
+            )
             .id,
             "partner_id": self.partner_a.id,
             "product_uom_id": False,
@@ -135,7 +142,13 @@ class AccountMoveSimpleNacional(AccountMoveBRCommon):
             "price_total": 0.0,
             "tax_ids": [],
             "tax_line_id": self.env["account.tax"]
-            .search([("name", "=", "ICMS SN Saida")], order="id DESC", limit=1)
+            .search(
+                [
+                    ("name", "=", "ICMS SN Saida"),
+                    ("company_id", "=", self.company_data["company"].id),
+                ],
+                limit=1,
+            )
             .id,
             "currency_id": self.company_data["currency"].id,
             "amount_currency": -27.0,
