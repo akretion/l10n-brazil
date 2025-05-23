@@ -2,7 +2,10 @@
 # Copyright (C) 2025  Raphaël Valyi - Akretion
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
+import logging
 from odoo import models
+
+_logger = logging.getLogger(__name__)
 
 # XML ID name part will be prefixed with 'l10n_br_coa.'
 DEFAULT_TAX_ACCOUNTS = {
@@ -105,8 +108,8 @@ DEFAULT_TAX_ACCOUNTS = {
     ),
     "tax_icmssn_payable": (
         "2.1.7.1.01",
-        "2.1.3.01",
-        "Simples Nacional a Recolher (ICMS part)",
+        "2.1.3.02",
+        "ICMS a Recolher",
         "liability_current",
     ),
     "tax_icms_st_payable": (
@@ -597,4 +600,7 @@ class AccountChartTemplate(models.Model):
         company.account_sale_tax_id = None
         company.account_purchase_tax_id = None
 
+        _logger.info(
+            _("Company: created tax accounts: %(refs)s", refs=created_accounts_refs)
+        )
         return created_accounts_refs
