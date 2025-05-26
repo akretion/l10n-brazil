@@ -76,6 +76,10 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
                     ".//page[@name='fiscal_line_extra_info']",
                     "//page[@name='fiscal_line_extra_info']",
                 ),
+                (
+                    ".//page[@name='fiscal_line_debug']",
+                    "//page[@name='fiscal_line_debug']",
+                ),
                 # these will only collect (invisible) fields for onchanges:
                 (
                     ".//control[@name='fiscal_taxes_fields']...",
@@ -88,6 +92,16 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
             )
         for placeholder_xpath, fiscal_xpath in xpath_mappings:
             fiscal_nodes = fsc_doc.xpath(fiscal_xpath)
+            if "fiscal_line_debug" in fiscal_xpath:
+                debug_fiscal_line = (
+                    self.env["ir.config_parameter"]
+                    .sudo()
+                    .get_param("l10n_br_fiscal.debug_fiscal_line")
+                )
+                if not debug_fiscal_line:
+                    for target_node in doc.findall(placeholder_xpath):
+                        target_node.getparent().remove(target_node)
+                    continue
             for target_node in doc.findall(placeholder_xpath):
                 if len(fiscal_nodes) == 1:
                     # replace unique placeholder
@@ -371,25 +385,31 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
     def _onchange_fiscal_operation_line_id(self):
         # Reset Taxes
         self._remove_all_fiscal_tax_ids()
-        if self.fiscal_operation_line_id:
-            mapping_result = self.fiscal_operation_line_id.map_fiscal_taxes(
-                company=self.company_id,
-                partner=self._get_fiscal_partner(),
-                product=self.product_id,
-                ncm=self.ncm_id,
-                nbm=self.nbm_id,
-                nbs=self.nbs_id,
-                cest=self.cest_id,
-                city_taxation_code=self.city_taxation_code_id,
-                service_type=self.service_type_id,
-                ind_final=self.ind_final,
-            )
-
-            self.cfop_id = mapping_result["cfop"]
-            self._process_fiscal_mapping(mapping_result)
-
         if not self.fiscal_operation_line_id:
             self.cfop_id = False
+            return
+
+        mapping_result, debug_message = self.fiscal_operation_line_id.map_fiscal_taxes(
+            company=self.company_id,
+            partner=self._get_fiscal_partner(),
+            product=self.product_id,
+            ncm=self.ncm_id,
+            nbm=self.nbm_id,
+            nbs=self.nbs_id,
+            cest=self.cest_id,
+            city_taxation_code=self.city_taxation_code_id,
+            service_type=self.service_type_id,
+            ind_final=self.ind_final,
+        )
+
+        self.cfop_id = mapping_result["cfop"]
+        if (
+            self.env["ir.config_parameter"]
+            .sudo()
+            .get_param("l10n_br_fiscal.debug_fiscal_line")
+        ):
+            self.debug_message = debug_message
+        self._process_fiscal_mapping(mapping_result)
 
     def _process_fiscal_mapping(self, mapping_result):
         self.ipi_guideline_id = mapping_result["ipi_guideline"]
@@ -426,6 +446,8 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
                 if city_id:
                     self.city_taxation_code_id = city_id
                     self.issqn_fg_city_id = company_city_id
+            self._get_product_price()
+
         else:
             self.name = False
             self.fiscal_type = False
@@ -441,7 +463,6 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
             self.city_taxation_code_id = False
             self.uot_id = False
 
-        self._get_product_price()
         self._onchange_fiscal_operation_id()
 
     def _prepare_fields_issqn(self, tax_dict):

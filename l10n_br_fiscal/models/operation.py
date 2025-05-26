@@ -1,8 +1,12 @@
 # Copyright (C) 2013  Renato Lima - Akretion
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
+import logging
+
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
+
+_logger = logging.getLogger(__name__)
 
 from ..constants.fiscal import (
     EDOC_PURPOSE,
@@ -236,13 +240,31 @@ class Operation(models.Model):
         return domain
 
     def line_definition(self, company, partner, product):
+        """
+        Match the best operation line for company, partner and product settings.
+        """
+
         self.ensure_one()
         if not company:
             company = self.env.company
-
-        lines = self.line_ids.search(self._line_domain(company, partner, product))
-
-        return self._select_best_line(lines)
+        line_domain = self._line_domain(company, partner, product)
+        lines = self.line_ids.search(line_domain)
+        best_line = self._select_best_line(lines)
+        _logger.debug(
+            _(
+                "Operation %(op_name)s (%(op_id)s): searching among lines "
+                "%(line_names)s with domain %(domain)s -> found %(op_line_names)s; "
+                "best %(best_name)s (%(best_id)s)",
+                op_name=self.name,
+                op_id=self.id,
+                line_names=self.line_ids.mapped("name"),
+                domain=line_domain,
+                op_line_names=lines.mapped("name"),
+                best_name=best_line.name,
+                best_id=best_line.id,
+            )
+        )
+        return best_line
 
     def _select_best_line(self, lines):
         if not lines:
