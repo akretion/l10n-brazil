@@ -2,6 +2,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 import logging
+
 from odoo import _, models
 
 _logger = logging.getLogger(__name__)
@@ -44,7 +45,7 @@ class AccountChartTemplate(models.Model):
             self.load_fiscal_taxes()
         return account_ref, taxes_ref
 
-    def load_fiscal_taxes(self):
+    def load_fiscal_taxes(self, companies=None):
         """
         Create missing account.tax for Brazil.
         Add missing account.account for the Brazilian taxes.
@@ -52,9 +53,10 @@ class AccountChartTemplate(models.Model):
         tax engine to kick in with the installed chart of account.
         """
         for coa_tpl in self:
-            companies = self.env["res.company"].search(
-                [("chart_template_id", "=", coa_tpl.id)]
-            )
+            if companies is None:
+                companies = self.env["res.company"].search(
+                    [("chart_template_id", "=", coa_tpl.id)]
+                )
 
             for company in companies:
                 tpl_xmlid = coa_tpl.get_external_id()[coa_tpl.id]
@@ -104,6 +106,6 @@ class AccountChartTemplate(models.Model):
                             continue
                         tax_source_ref = ".".join([ref_module, ref_name])
                         tax_template = self.env.ref(tax_source_ref)
-                        tax.fiscal_tax_ids = tax_template.fiscal_tax_ids = (
-                            template_source.fiscal_tax_ids
-                        )
+                        tax.fiscal_tax_ids = (
+                            tax_template.fiscal_tax_ids
+                        ) = template_source.fiscal_tax_ids

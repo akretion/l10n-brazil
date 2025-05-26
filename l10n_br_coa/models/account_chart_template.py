@@ -3,7 +3,8 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 import logging
-from odoo import models
+
+from odoo import _, models
 
 _logger = logging.getLogger(__name__)
 
@@ -31,8 +32,8 @@ DEFAULT_TAX_ACCOUNTS = {
     "tax_icms_purchase_expense": (
         "6.1.1.2.23",
         "3.1.1.04",
-        "(-) ICMS Devolução Venda",
-        "income_other",
+        "(+) ICMS s/ Compras",  # TODO check tax template below
+        "expense",
     ),
     "tax_ipi_payable": (
         "2.1.7.1.02",
@@ -55,7 +56,7 @@ DEFAULT_TAX_ACCOUNTS = {
     "tax_ipi_purchase_expense": (
         "6.1.1.2.28",
         "3.1.1.04",
-        "(-) IPI Devolução Venda",
+        "(+) IPI s/ Compras",  # "(-) IPI Devolução Venda",  # FIXME!!!
         "income_other",
     ),
     "tax_pis_payable": (
@@ -79,7 +80,7 @@ DEFAULT_TAX_ACCOUNTS = {
     "tax_pis_purchase_expense": (
         "6.1.1.2.26",
         "3.1.1.04",
-        "(-) PIS Devolução Venda",
+        "(+) PIS s/ Compras",  # "(-) PIS Devolução Venda",
         "income_other",
     ),
     "tax_cofins_payable": (
@@ -103,13 +104,13 @@ DEFAULT_TAX_ACCOUNTS = {
     "tax_cofins_purchase_expense": (
         "6.1.1.2.25",
         "3.1.1.04",
-        "(-) COFINS Devolução Venda",
+        "(+) COFINS s/ Compras",  # "(-) COFINS Devolução Venda",
         "income_other",
     ),
     "tax_icmssn_payable": (
         "2.1.7.1.01",
         "2.1.3.02",
-        "ICMS a Recolher",
+        "ICMS SN a Recolher",
         "liability_current",
     ),
     "tax_icms_st_payable": (
@@ -462,6 +463,7 @@ class AccountChartTemplate(models.Model):
                 domain = [
                     ("tax_group_id", "=", tax.tax_group_id.id),
                     ("chart_template_id", "=", self.id),
+                    ("company_id", "=", company.id),
                 ]
                 group_tax_account_template = self.env[
                     "l10n_br_coa.account.tax.group.account.template"
@@ -498,7 +500,7 @@ class AccountChartTemplate(models.Model):
         return account_ref, taxes_ref
 
     def _populate_default_br_tax_accounts(
-        self, company, flavor="cfc", review_suffix="GEN"
+        self, company, flavor="cfc", review_suffix=".GEN"
     ):
         """
         Populate a default Brazilian tax accounts and configure tax repartition lines.
@@ -519,6 +521,11 @@ class AccountChartTemplate(models.Model):
             # We assume these codes are specific enough.
             code = code_cfc if flavor == "cfc" else code_itg
             code = f"{code}{review_suffix}"
+
+            # TODO: would be better to 1st search for the taxes related to all templates
+            # DEFAULT_TAX_TEMPLATES_ACCOUNTS.items()
+            # and if xml_id_name_part is related to a tax template for which the tax
+            # repartion_line_ids have accounts already, then skip account creation
             existing_account = Account.search(
                 [("code", "=", code), ("company_id", "=", company.id)], limit=1
             )
@@ -540,9 +547,12 @@ class AccountChartTemplate(models.Model):
             created_accounts_refs[xml_id_name_part] = account
 
             # Ensure ir.model.data exists for easy reference
+            tpl_ref = self.get_external_id().get(self.id)
+            imd_module = tpl_ref.split(".")[0]
+            imd_name = f"{company.id}_{xml_id_name_part}"
             imd_domain = [
-                ("module", "=", "l10n_br_coa"),
-                ("name", "=", xml_id_name_part),
+                ("module", "=", imd_module),
+                ("name", "=", imd_name),
             ]
             existing_imd = IrModelData.search(imd_domain)
             if existing_imd:
@@ -553,8 +563,8 @@ class AccountChartTemplate(models.Model):
                     existing_imd.unlink()
                     IrModelData.create(
                         {
-                            "name": xml_id_name_part,
-                            "module": "l10n_br_coa",
+                            "name": imd_name,
+                            "module": imd_module,
                             "model": "account.account",
                             "res_id": account.id,
                             "noupdate": True,
@@ -563,8 +573,8 @@ class AccountChartTemplate(models.Model):
             else:
                 IrModelData.create(
                     {
-                        "name": xml_id_name_part,
-                        "module": "l10n_br_coa",
+                        "name": imd_name,
+                        "module": imd_module,
                         "model": "account.account",
                         "res_id": account.id,
                         "noupdate": True,
@@ -596,11 +606,20 @@ class AccountChartTemplate(models.Model):
             )
             company_tax._update_repartition_lines(invoice_account.id, refund_account.id)
 
+        # TODO remove accounts on related tax_group_id (or earlier in the call stack)
+
         # Set default company accounts
         company.account_sale_tax_id = None
         company.account_purchase_tax_id = None
 
         _logger.info(
-            _("Company: created tax accounts: %(refs)s", refs=created_accounts_refs)
+            _(
+                "Company %(company_name)s: created tax accounts: %(refs)s",
+                company_name=company.name,
+                refs=created_accounts_refs,
+            )
         )
+        if "Lucro Presumido" in company.name:
+            pass
+            # breakpoint()
         return created_accounts_refs

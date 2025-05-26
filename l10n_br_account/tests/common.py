@@ -26,6 +26,86 @@ class AccountMoveBRCommon(AccountTestInvoicingCommon):
 
         cls.env.user.groups_id |= cls.env.ref("l10n_br_fiscal.group_manager")
 
+        cls.product_a.write(
+            {
+                "default_code": "prod_a",
+                "standard_price": 1000.0,
+                "ncm_id": cls.env.ref("l10n_br_fiscal.ncm_94033000").id,
+                "fiscal_genre_id": cls.env.ref("l10n_br_fiscal.product_genre_94").id,
+                "fiscal_type": "00",
+                "icms_origin": "5",
+                "taxes_id": False,
+                "tax_icms_or_issqn": "icms",
+                "uoe_id": cls.env.ref("uom.product_uom_kgm").id,
+            }
+        )
+        cls.fiscal_type_product_product_a = cls.env["ir.property"].create(
+            {
+                "name": "fiscal_type",
+                "fields_id": cls.env["ir.model.fields"]
+                .search(
+                    [("model", "=", "product.template"), ("name", "=", "fiscal_type")]
+                )
+                .id,
+                "value": "04",
+                "type": "selection",
+                "res_id": cls.product_a.id,
+            }
+        )
+        cls.fiscal_origin_product_product_a = cls.env["ir.property"].create(
+            {
+                "name": "fiscal_origin",
+                "fields_id": cls.env["ir.model.fields"]
+                .search(
+                    [("model", "=", "product.template"), ("name", "=", "icms_origin")]
+                )
+                .id,
+                "value": "5",
+                "type": "selection",
+                "res_id": cls.product_a.id,
+            }
+        )
+
+        cls.product_b.write(
+            {
+                "default_code": "prod_b",
+                "lst_price": 1000.0,
+                "ncm_id": cls.env.ref("l10n_br_fiscal.ncm_94013090").id,
+                "fiscal_genre_id": cls.env.ref("l10n_br_fiscal.product_genre_94").id,
+                "fiscal_type": "00",
+                "icms_origin": "0",
+                "taxes_id": False,
+                "tax_icms_or_issqn": "icms",
+                "uoe_id": cls.env.ref("uom.product_uom_kgm").id,
+            }
+        )
+        cls.fiscal_type_product_product_b = cls.env["ir.property"].create(
+            {
+                "name": "fiscal_type",
+                "fields_id": cls.env["ir.model.fields"]
+                .search(
+                    [("model", "=", "product.template"), ("name", "=", "fiscal_type")]
+                )
+                .id,
+                "value": "00",
+                "type": "selection",
+                "res_id": cls.product_b.id,
+            }
+        )
+        cls.fiscal_origin_product_product_b = cls.env["ir.property"].create(
+            {
+                "name": "fiscal_origin",
+                "fields_id": cls.env["ir.model.fields"]
+                .search(
+                    [("model", "=", "product.template"), ("name", "=", "icms_origin")]
+                )
+                .id,
+                "value": "0",
+                "type": "selection",
+                "res_id": cls.product_b.id,
+            }
+        )
+
         cls.partner_a.write(
             {
                 "cnpj_cpf": "49.190.159/0001-05",
@@ -135,7 +215,7 @@ class AccountMoveBRCommon(AccountTestInvoicingCommon):
             company_name, chart_template=chart_template, **kwargs
         )
         company = company_data_dict["company"]
-        company.chart_template_id.load_fiscal_taxes()
+        company.chart_template_id.sudo().load_fiscal_taxes(companies=[company])
         return company_data_dict
 
     @classmethod
