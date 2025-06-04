@@ -221,8 +221,7 @@ class SpedMixin(models.AbstractModel):
                 continue
             if not fname.isupper() and (
                 # skip mail.thread fields
-                fname != "declaration_id"
-                and not fname.startswith("reg_")
+                fname != "declaration_id" and not fname.startswith("reg_")
             ):
                 continue
             elif field.type in ("one2many", "many2many", "text", "html"):
