@@ -553,20 +553,26 @@ class SpedMixin(models.AbstractModel):
             return str(value) if value else ""
         elif field.type == "integer":
             return "" if value == 0 else str(value)
-        elif field.type == "float":
+
+        elif field.type == "float":  # Or use field.xsd_type if we have TDec_xxxx
+            # Determine sped_decimal_places from field.xsd_type or a new attribute
+            # For now, let's assume 2 if not specified by a new 'sped_decimals' attr
+            sped_decimal_places = getattr(field, "sped_decimals", 2)
+            if float_is_zero(
+                value, precision_digits=sped_decimal_places + 1
+            ):  # +1 for rounding check
+                return ""  # Or "0,00" if SPED mandates it
             return (
-                str(int(value))
-                if float_is_zero(value % 1, 6)
-                else str(round(value, 6)).replace(".", ",")
+                ("{:." + str(sped_decimal_places) + "f}")
+                .format(value)
+                .replace(".", ",")
             )
+
         elif field.type == "monetary":
-            return (
-                ""
-                if float_is_zero(value, precision_digits=8)
-                else str(int(value))
-                if float_is_zero(value % 1, precision_digits=8)
-                else str(value)
-            )
+            # Similar to float, but SPED is usually stricter on 2 decimals
+            if float_is_zero(value, precision_digits=8):  # Check with 2 decimals
+                return ""  # Or "0,00"
+            return ("%.2f" % value).replace(".", ",")
         else:
             return str(value)
 
