@@ -75,7 +75,7 @@ class SpedMixin(models.AbstractModel):
                     _("Undefined mapping model for Register %s and model")
                     % (self._name, self.res_model)
                 )
-            res.reference = "%s,%s" % (model.model, res.res_id)
+            res.reference = f"{model.model},{res.res_id}"
 
     def _compute_currency_id(self):
         for item in self:
@@ -125,7 +125,7 @@ class SpedMixin(models.AbstractModel):
         """
 
         register_model_names = list(
-            filter(lambda x: "l10n_br_sped.%s" % (kind,) in x, self.env.keys())
+            filter(lambda x: f"l10n_br_sped.{kind}" in x, self.env.keys())
         )
         register_level2_models = [
             self.env[m]
@@ -373,11 +373,7 @@ class SpedMixin(models.AbstractModel):
                 if declaration is not None and reg_code == "0000":
                     continue
                 register_class = self.env.get(
-                    "l10n_br_sped.%s.%s"
-                    % (
-                        kind,
-                        reg_code.lower(),
-                    ),
+                    f"l10n_br_sped.{kind}.{reg_code.lower()}",
                     None,
                 )
 
@@ -386,7 +382,8 @@ class SpedMixin(models.AbstractModel):
                         continue
                     raise UserError(
                         _(
-                            "Register %(code)s doesn't match Odoo %(kind)s SPED structure!",
+                            "Register %(code)s doesn't match "
+                            "Odoo %(kind)s SPED structure!",
                             code=reg_code,
                             kind=kind,
                         )
@@ -410,13 +407,9 @@ class SpedMixin(models.AbstractModel):
                     vals["declaration_id"] = declaration.id
 
                 if parent:
-                    vals[
-                        "reg_%s_ids_Registro%s_id"
-                        % (
-                            register_class._name.split(".")[-1].upper(),
-                            parent._name.split(".")[-1].upper(),
-                        )
-                    ] = parent.id
+                    register = register_class._name.split(".")[-1].upper()
+                    parent_code = parent._name.split(".")[-1].upper()
+                    vals[f"reg_{register}_ids_Registro{parent_code}_id"] = parent.id
                 register = register_class.create(vals)
                 if reg_code == "0000":
                     declaration = register
@@ -426,7 +419,7 @@ class SpedMixin(models.AbstractModel):
                 previous_register = register
 
         log_msg = StringIO()
-        log_msg.write("<h3>%s</h3>" % (_("Imported from file:"),))
+        log_msg.write(f"<h3>{_('Imported from file:')}</h3>")
         for _code, registers in level_2_registers.items():
             registers[0]._log_chatter_sped_item(log_msg, 2, registers)
         declaration.message_post(body=log_msg.getvalue())
@@ -462,9 +455,7 @@ class SpedMixin(models.AbstractModel):
         values = line.split("|")[2:][:-1]
         register_vals = {"is_imported": True}
         code = self._name[-4:]
-        register_spec_model = self._name.replace(
-            ".%s" % (code), ".%s.%s" % (version, code)
-        )
+        register_spec_model = self._name.replace(f".{code}", f".{version}.{code}")
         register_spec = self.env[register_spec_model]
         _logger.info(f"register_spec: {register_spec}, reading {line}")
         for fname, field in register_spec._ordered_fields():
@@ -474,8 +465,8 @@ class SpedMixin(models.AbstractModel):
                 break
             if field.type in ("many2one", "one2many"):
                 raise RuntimeError(
-                    "Bad register fields! more values than fields in Odoo! %s %s"
-                    % (fname, values),
+                    "Bad register fields! more values "
+                    f"than fields in Odoo! {fname} {values}"
                 )
             val = values.pop(0)
 
@@ -698,7 +689,8 @@ class SpedMixin(models.AbstractModel):
             record_count = f" ({len(records)} records)" if records else ""
             body = (
                 f"<div>{'&nbsp;' * level * 4}"
-                f'<a href="/web#action={action.id}" class="o_mail_redirect" target="_blank">'
+                f'<a href="/web#action={action.id}" '
+                f'class="o_mail_redirect" target="_blank">'
                 f"{self._name[-4:].upper()}{record_count}</a></div>"
             )
             log_msg.write(body)
