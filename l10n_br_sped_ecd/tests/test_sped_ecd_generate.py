@@ -136,7 +136,6 @@ class SpedTest(AccountMoveBRCommon):
     def test_generate_sped(self):
         self.env["l10n_br_sped.mixin"]._flush_registers("ecd")
         file_path = path.join(self.demo_path, "demo_ecd_output.txt")
-        self.env["l10n_br_sped.mixin"]
         declaration = self.env["l10n_br_sped.declaration"].create({})
         # sped_mixin._import_file(file_path, "ecd")
         sped = declaration._generate_sped_text()

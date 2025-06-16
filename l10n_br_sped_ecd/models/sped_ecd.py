@@ -19,7 +19,7 @@ from odoo.addons.l10n_br_sped_base.models.sped_mixin import (
 class Registro0000(models.Model):
     "ABERTURA DO ARQUIVO DIGITAL E IDENTIFICAÇÃO DO EMPRESÁRIO OU DA SOCIEDADE EMPRESÁRIA"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.0000"
     _inherit = ["l10n_br_sped.ecd.9.0000"]
     _odoo_model = "res.company"
@@ -74,8 +74,9 @@ class Registro0000(models.Model):
 
     @api.model
     def _append_top_view_elements(self, group, inline=False):
-        super()._append_top_view_elements(group)
+        res = super()._append_top_view_elements(group)
         group.append(E.field(name="ind_esc", required="1", attrs=EDITABLE_ON_DRAFT))
+        return res
 
     @api.model
     def _odoo_domain(self, parent_record, declaration):
@@ -112,7 +113,7 @@ class Registro0000(models.Model):
 class Registro0007(models.Model):
     "OUTRAS INSCRIÇÕES CADASTRAIS DA PESSOA JURÍDICA"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.0007"
     _inherit = "l10n_br_sped.ecd.9.0007"
 
@@ -127,7 +128,7 @@ class Registro0007(models.Model):
 class Registro0020(models.Model):
     "ESCRITURAÇÃO CONTÁBIL DESCENTRALIZADA"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.0020"
     _inherit = "l10n_br_sped.ecd.9.0020"
 
@@ -147,7 +148,7 @@ class Registro0020(models.Model):
 class Registro0035(models.Model):
     "IDENTIFICAÇÃO DAS SCP"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.0035"
     _inherit = "l10n_br_sped.ecd.9.0035"
 
@@ -162,7 +163,7 @@ class Registro0035(models.Model):
 class Registro0150(models.Model):
     "TABELA DE CADASTRO DO PARTICIPANTE"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.0150"
     _inherit = "l10n_br_sped.ecd.9.0150"
 
@@ -212,7 +213,7 @@ class Registro0150(models.Model):
 class Registro0180(models.Model):
     "IDENTIFICAÇÃO DO RELACIONAMENTO COM O PARTICIPANTE"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.0180"
     _inherit = "l10n_br_sped.ecd.9.0180"
 
@@ -228,7 +229,7 @@ class Registro0180(models.Model):
 class RegistroI010(models.Model):
     "IDENTIFICAÇÃO DA ESCRITURAÇÃO CONTÁBIL"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.i010"
     _inherit = "l10n_br_sped.ecd.9.i010"
 
@@ -244,7 +245,7 @@ class RegistroI010(models.Model):
 class RegistroI012(models.Model):
     "LIVROS AUXILIARES AO DIÁRIO"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.i012"
     _inherit = "l10n_br_sped.ecd.9.i012"
 
@@ -261,7 +262,7 @@ class RegistroI012(models.Model):
 class RegistroI015(models.Model):
     "IDENTIFICAÇÃO DAS CONTAS DA ESCRITURAÇÃO RESUMIDA A QUE SE REFERE A ESCRITURAÇÃO AUXILIAR"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.i015"
     _inherit = "l10n_br_sped.ecd.9.i015"
 
@@ -275,7 +276,7 @@ class RegistroI015(models.Model):
 class RegistroI020(models.Model):
     "CAMPOS ADICIONAIS"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.i020"
     _inherit = "l10n_br_sped.ecd.9.i020"
 
@@ -294,7 +295,7 @@ class RegistroI020(models.Model):
 class RegistroI030(models.Model):
     "TERMO DE ABERTURA"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.i030"
     _inherit = "l10n_br_sped.ecd.9.i030"
 
@@ -318,7 +319,7 @@ class RegistroI030(models.Model):
 class RegistroI050(models.Model):
     "PLANO DE CONTAS"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.i050"
     _inherit = "l10n_br_sped.ecd.9.i050"
 
@@ -338,7 +339,7 @@ class RegistroI050(models.Model):
 class RegistroI051(models.Model):
     "PLANO DE CONTAS REFERENCIAL"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.i051"
     _inherit = "l10n_br_sped.ecd.9.i051"
 
@@ -353,7 +354,7 @@ class RegistroI051(models.Model):
 class RegistroI052(models.Model):
     "INDICAÇÃO DOS CÓDIGOS DE AGLUTINAÇÃO"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.i052"
     _inherit = "l10n_br_sped.ecd.9.i052"
 
@@ -368,7 +369,7 @@ class RegistroI052(models.Model):
 class RegistroI053(models.Model):
     "SUBCONTAS CORRELATAS"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.i053"
     _inherit = "l10n_br_sped.ecd.9.i053"
 
@@ -384,7 +385,7 @@ class RegistroI053(models.Model):
 class RegistroI075(models.Model):
     "TABELA DE HISTÓRICO PADRONIZADO"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.i075"
     _inherit = "l10n_br_sped.ecd.9.i075"
 
@@ -399,7 +400,7 @@ class RegistroI075(models.Model):
 class RegistroI100(models.Model):
     "CENTRO DE CUSTOS"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.i100"
     _inherit = "l10n_br_sped.ecd.9.i100"
 
@@ -415,7 +416,7 @@ class RegistroI100(models.Model):
 class RegistroI150(models.Model):
     "SALDOS PERIÓDICOS – IDENTIFICAÇÃO DO PERÍODO"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.i150"
     _inherit = "l10n_br_sped.ecd.9.i150"
 
@@ -430,7 +431,7 @@ class RegistroI150(models.Model):
 class RegistroI155(models.Model):
     "DETALHES DOS SALDOS PERIÓDICOS"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.i155"
     _inherit = "l10n_br_sped.ecd.9.i155"
 
@@ -457,7 +458,7 @@ class RegistroI155(models.Model):
 class RegistroI157(models.Model):
     "TRANSFERÊNCIA DE SALDOS DO PLANO DE CONTAS ANTERIOR"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.i157"
     _inherit = "l10n_br_sped.ecd.9.i157"
 
@@ -476,7 +477,7 @@ class RegistroI157(models.Model):
 class RegistroI200(models.Model):
     "LANÇAMENTO CONTÁBIL"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.i200"
     _inherit = "l10n_br_sped.ecd.9.i200"
     _odoo_model = "account.move"
@@ -500,7 +501,7 @@ class RegistroI200(models.Model):
 class RegistroI250(models.Model):
     "PARTIDAS DO LANÇAMENTO CONTÁBIL"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.i250"
     _inherit = "l10n_br_sped.ecd.9.i250"
     _odoo_model = "account.move.line"
@@ -537,7 +538,7 @@ class RegistroI250(models.Model):
 class RegistroI300(models.Model):
     "BALANCETES DIÁRIOS – IDENTIFICAÇÃO DA DATA"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.i300"
     _inherit = "l10n_br_sped.ecd.9.i300"
 
@@ -551,7 +552,7 @@ class RegistroI300(models.Model):
 class RegistroI310(models.Model):
     "DETALHES DO BALANCETE DIÁRIO"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.i310"
     _inherit = "l10n_br_sped.ecd.9.i310"
 
@@ -570,7 +571,7 @@ class RegistroI310(models.Model):
 class RegistroI350(models.Model):
     "SALDOS DAS CONTAS DE RESULTADO ANTES DO ENCERRAMENTO – IDENTIFICAÇÃO DA DATA"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.i350"
     _inherit = "l10n_br_sped.ecd.9.i350"
 
@@ -584,7 +585,7 @@ class RegistroI350(models.Model):
 class RegistroI355(models.Model):
     "DOS SALDOS DAS CONTAS DE RESULTADO ANTES DO DETALHES ENCERRAMENTO"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.i355"
     _inherit = "l10n_br_sped.ecd.9.i355"
 
@@ -603,7 +604,7 @@ class RegistroI355(models.Model):
 class RegistroI500(models.Model):
     "PARÂMETROS DE IMPRESSÃO/VISUALIZAÇÃO DO LIVRO RAZÃO AUXILIAR COM LEIAUTE PARAMETRIZÁVEL"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.i500"
     _inherit = "l10n_br_sped.ecd.9.i500"
 
@@ -617,7 +618,7 @@ class RegistroI500(models.Model):
 class RegistroI510(models.Model):
     "DEFINIÇÃO DOS CAMPOS DO LIVRO RAZÃO AUXILIAR COM LEIAUTE PARAMETRIZÁVEL"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.i510"
     _inherit = "l10n_br_sped.ecd.9.i510"
 
@@ -636,7 +637,7 @@ class RegistroI510(models.Model):
 class RegistroI550(models.Model):
     "DETALHES DO LIVRO RAZÃO AUXILIAR COM LEIAUTE PARAMETRIZÁVEL"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.i550"
     _inherit = "l10n_br_sped.ecd.9.i550"
 
@@ -652,7 +653,7 @@ class RegistroI550(models.Model):
         if len(self):
             count_by_register[code] += len(self)
         for rec in self:
-            sped.write("\n|%s|" % (code,))
+            sped.write(f"\n|{code}|")
             sped.write(rec.RZ_CONT)
             sped.write("|")
             line_count[0] += 1
@@ -665,7 +666,7 @@ class RegistroI550(models.Model):
 class RegistroI555(models.Model):
     "TOTAIS NO LIVRO RAZÃO AUXILIAR COM LEIAUTE PARAMETRIZÁVEL"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.i555"
     _inherit = "l10n_br_sped.ecd.9.i555"
 
@@ -681,7 +682,7 @@ class RegistroI555(models.Model):
         if len(self):
             count_by_register[code] += len(self)
         for rec in self:
-            sped.write("\n|%s|" % (code,))
+            sped.write(f"\n|{code}|")
             sped.write(rec.RZ_CONT_TOT or "")
             sped.write("|")
             line_count[0] += 1
@@ -690,7 +691,7 @@ class RegistroI555(models.Model):
 class RegistroJ005(models.Model):
     "DEMONSTRAÇÕES CONTÁBEIS"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.j005"
     _inherit = "l10n_br_sped.ecd.9.j005"
 
@@ -707,7 +708,7 @@ class RegistroJ005(models.Model):
 class RegistroJ100(models.Model):
     "BALANÇO PATRIMONIAL"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.j100"
     _inherit = "l10n_br_sped.ecd.9.j100"
 
@@ -731,7 +732,7 @@ class RegistroJ100(models.Model):
 class RegistroJ150(models.Model):
     "DEMONSTRAÇÃO DO RESULTADO DO EXERCÍCIO"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.j150"
     _inherit = "l10n_br_sped.ecd.9.j150"
 
@@ -756,7 +757,7 @@ class RegistroJ150(models.Model):
 class RegistroJ210(models.Model):
     "DE OU DEMONSTRAÇÃO LUCROS PREJUÍZOS ACUMULADOS DO"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.j210"
     _inherit = "l10n_br_sped.ecd.9.j210"
 
@@ -777,7 +778,7 @@ class RegistroJ210(models.Model):
 class RegistroJ215(models.Model):
     "J215"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.j215"
     _inherit = "l10n_br_sped.ecd.9.j215"
 
@@ -794,7 +795,7 @@ class RegistroJ215(models.Model):
 class RegistroJ800(models.Model):
     "OUTRAS INFORMAÇÕES"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.j800"
     _inherit = "l10n_br_sped.ecd.9.j800"
 
@@ -812,7 +813,7 @@ class RegistroJ800(models.Model):
 class RegistroJ801(models.Model):
     "TERMO DE VERIFICAÇÃO PARA FINS DE SUBSTITUIÇÃO DA ECD"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.j801"
     _inherit = "l10n_br_sped.ecd.9.j801"
 
@@ -831,7 +832,7 @@ class RegistroJ801(models.Model):
 class RegistroJ900(models.Model):
     "TERMO DE ENCERRAMENTO"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.j900"
     _inherit = "l10n_br_sped.ecd.9.j900"
 
@@ -851,7 +852,7 @@ class RegistroJ900(models.Model):
 class RegistroJ930(models.Model):
     "SIGNATÁRIOS DA ESCRITURAÇÃO"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.j930"
     _inherit = "l10n_br_sped.ecd.9.j930"
 
@@ -875,7 +876,7 @@ class RegistroJ930(models.Model):
 class RegistroJ932(models.Model):
     "SIGNATÁRIOS DO TERMO DE VERIFICAÇÃO PARA FINS DE SUBSTITUIÇÃO DA ECD"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.j932"
     _inherit = "l10n_br_sped.ecd.9.j932"
 
@@ -898,7 +899,7 @@ class RegistroJ932(models.Model):
 class RegistroJ935(models.Model):
     "IDENTIFICAÇÃO DOS AUDITORES INDEPENDENTES"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.j935"
     _inherit = "l10n_br_sped.ecd.9.j935"
 
@@ -914,7 +915,7 @@ class RegistroJ935(models.Model):
 class RegistroK030(models.Model):
     "PERÍODO DA ESCRITURAÇÃO CONTÁBIL CONSOLIDADA"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.k030"
     _inherit = "l10n_br_sped.ecd.9.k030"
 
@@ -929,7 +930,7 @@ class RegistroK030(models.Model):
 class RegistroK100(models.Model):
     "RELAÇÃO DAS EMPRESAS CONSOLIDADAS"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.k100"
     _inherit = "l10n_br_sped.ecd.9.k100"
 
@@ -951,7 +952,7 @@ class RegistroK100(models.Model):
 class RegistroK110(models.Model):
     "RELAÇÃO DOS EVENTOS SOCIETÁRIOS"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.k110"
     _inherit = "l10n_br_sped.ecd.9.k110"
 
@@ -966,7 +967,7 @@ class RegistroK110(models.Model):
 class RegistroK115(models.Model):
     "EMPRESAS PARTICIPANTES DO EVENTO SOCIETÁRIO"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.k115"
     _inherit = "l10n_br_sped.ecd.9.k115"
 
@@ -982,7 +983,7 @@ class RegistroK115(models.Model):
 class RegistroK200(models.Model):
     "PLANO DE CONTAS CONSOLIDADO"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.k200"
     _inherit = "l10n_br_sped.ecd.9.k200"
 
@@ -1001,7 +1002,7 @@ class RegistroK200(models.Model):
 class RegistroK210(models.Model):
     "MAPEAMENTO PARA O PLANO DE CONTAS DAS EMPRESAS CONSOLIDADAS"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.k210"
     _inherit = "l10n_br_sped.ecd.9.k210"
 
@@ -1016,7 +1017,7 @@ class RegistroK210(models.Model):
 class RegistroK300(models.Model):
     "SALDOS DAS CONTAS CONSOLIDADAS"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.k300"
     _inherit = "l10n_br_sped.ecd.9.k300"
 
@@ -1036,7 +1037,7 @@ class RegistroK300(models.Model):
 class RegistroK310(models.Model):
     "EMPRESAS DETENTORAS DAS PARCELAS DO VALOR ELIMINADO TOTAL"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.k310"
     _inherit = "l10n_br_sped.ecd.9.k310"
 
@@ -1052,7 +1053,7 @@ class RegistroK310(models.Model):
 class RegistroK315(models.Model):
     "EMPRESAS CONTRAPARTES DAS PARCELAS DO VALOR ELIMINADO TOTAL"
 
-    _description = textwrap.dedent("    %s" % (__doc__,))
+    _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.ecd.k315"
     _inherit = "l10n_br_sped.ecd.9.k315"
 
