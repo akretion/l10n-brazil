@@ -15,7 +15,7 @@ nfelib e gerar o codigo dentro da pasta:
 ``` bash
 git clone https://github.com/akretion/nfelib
 cd nfelib
-export XSDATA_SCHEMA=nfe; export XSDATA_VERSION=40; export XSDATA_SKIP="^ICMS.ICMS\d+|^ICMS.ICMSSN\d+"
+export XSDATA_SCHEMA=nfe; export XSDATA_VERSION=40; export XSDATA_SKIP="^ICMS.ICMS\d+|^ICMS.ICMSSN\d+|TProtNFe|TRetConsReciNFe"; export XSDATA_LANG="portuguese"
 xsdata generate nfelib/nfe/schemas/v4_0  --package nfelib.nfe.odoo.v4_0 --output=odoo
 mv nfelib/odoo/nfe/v4_0 <caminho_do_odoo>/l10n_br_nfe_spec/models/v4_0
 ```
