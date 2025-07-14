@@ -2,7 +2,6 @@ exclude: |
   (?x)
   # NOT INSTALLABLE ADDONS
   # END NOT INSTALLABLE ADDONS
-  ^l10n_br_nfe_spec/models/v4_0/|  # (don't reformat generated code)
   ^l10n_br_mdfe_spec/models/v3_0/|  # (don't reformat generated code)
   ^l10n_br_cte_spec/models/v4_0/|  # (don't reformat generated code)
   ^spec_driven_model/tests/|  # (tests include generated code)
