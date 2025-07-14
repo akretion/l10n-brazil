@@ -449,12 +449,6 @@ class TretConsSitNfe(models.AbstractModel):
         xsd_type="TChNFe",
     )
 
-    nfe40_protNFe = fields.Many2one(
-        comodel_name="nfe.40.tprotnfe",
-        string="Protocolo de autorização de uso da NF-e",
-        xsd_type="TProtNFe",
-    )
-
     nfe40_retCancNFe = fields.Many2one(
         comodel_name="nfe.40.tretcancnfe",
         string="Protocolo de homologação de cancelamento",
