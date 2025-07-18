@@ -113,7 +113,7 @@ class Partner(models.Model):
         for record in self:
             domain = []
 
-            if not record.cnpj_cpf:
+            if not record.vat:
                 return
 
             if self.env.context.get(
@@ -140,7 +140,7 @@ class Partner(models.Model):
 
             matches = record.env["res.partner"].search(domain)
             if matches:
-                if cnpj_cpf.validar_cnpj(record.cnpj_cpf):
+                if cnpj_cpf.validar_cnpj(record.vat):
                     if allow_cnpj_multi_ie == "True":
                         for partner in record.env["res.partner"].search(domain):
                             if (
@@ -183,7 +183,7 @@ class Partner(models.Model):
         for record in self:
             check_cnpj_cpf(
                 record.env,
-                record.cnpj_cpf,
+                record.vat,
                 record.country_id,
             )
 

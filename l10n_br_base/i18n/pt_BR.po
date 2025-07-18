@@ -3902,10 +3902,10 @@ msgid "CNPJ..."
 msgstr "CNPJ..."
 
 #. module: l10n_br_base
-#: model:ir.model.fields,field_description:l10n_br_base.field_l10n_br_base_party_mixin__cnpj_cpf
-#: model:ir.model.fields,field_description:l10n_br_base.field_res_company__cnpj_cpf
-#: model:ir.model.fields,field_description:l10n_br_base.field_res_partner__cnpj_cpf
-#: model:ir.model.fields,field_description:l10n_br_base.field_res_users__cnpj_cpf
+#: model:ir.model.fields,field_description:l10n_br_base.field_l10n_br_base_party_mixin__vat
+#: model:ir.model.fields,field_description:l10n_br_base.field_res_company__vat
+#: model:ir.model.fields,field_description:l10n_br_base.field_res_partner__vat
+#: model:ir.model.fields,field_description:l10n_br_base.field_res_users__vat
 msgid "CNPJ/CPF"
 msgstr "CNPJ/CPF"
 
@@ -3942,7 +3942,7 @@ msgstr "CPF"
 
 #. module: l10n_br_base
 #: code:addons/l10n_br_base/models/res_partner_pix.py:0
-#: model:ir.model.fields.selection,name:l10n_br_base.selection__res_partner_pix__key_type__cnpj_cpf
+#: model:ir.model.fields.selection,name:l10n_br_base.selection__res_partner_pix__key_type__vat
 #, python-format
 msgid "CPF or CNPJ"
 msgstr "CPF ou CNPJ"

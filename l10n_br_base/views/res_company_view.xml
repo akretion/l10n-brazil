@@ -20,7 +20,7 @@
                     attrs="{'invisible': [('country_id', '!=', %(base.br)d)]}"
                 />
                 <field
-                    name="cnpj_cpf"
+                    name="vat"
                     placeholder="CNPJ..."
                     attrs="{'invisible': [('country_id', '!=', %(base.br)d)]}"
                 />
@@ -79,7 +79,7 @@
         <field name="field_parent">child_ids</field>
         <field name="arch" type="xml">
             <field name="name" position="after">
-                <field name="cnpj_cpf" />
+                <field name="vat" />
             </field>
         </field>
     </record>

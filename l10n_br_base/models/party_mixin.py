@@ -126,12 +126,12 @@ class PartyMixin(models.AbstractModel):
         for partner in self:
             partner.cnpj_cpf = partner.vat
 
-    @api.depends("cnpj_cpf")
+    @api.depends("vat")
     def _compute_cnpj_cpf_stripped(self):
         for record in self:
-            if record.cnpj_cpf:
+            if record.vat:
                 record.cnpj_cpf_stripped = "".join(
-                    char for char in record.cnpj_cpf if char.isalnum()
+                    char for char in record.vat if char.isalnum()
                 )
             else:
                 record.cnpj_cpf_stripped = False

@@ -16,7 +16,7 @@ class Company(models.Model):
         partner_fields = super()._get_company_address_field_names()
         return partner_fields + [
             "legal_name",
-            "cnpj_cpf",
+            "vat",
             "inscr_est",
             "inscr_mun",
             "district",
@@ -47,10 +47,10 @@ class Company(models.Model):
         for company in self:
             company.partner_id.street_number = company.street_number
 
-    def _inverse_cnpj_cpf(self):
+    def _inverse_vat(self):
         """Write the l10n_br specific functional fields."""
         for company in self:
-            company.partner_id.cnpj_cpf = company.cnpj_cpf
+            company.partner_id.vat = company.vat
 
     def _inverse_inscr_est(self):
         """Write the l10n_br specific functional fields."""
@@ -113,9 +113,9 @@ class Company(models.Model):
 
     country_id = fields.Many2one(default=lambda self: self.env.ref("base.br"))
 
-    cnpj_cpf = fields.Char(
+    vat = fields.Char(
         compute="_compute_address",
-        inverse="_inverse_cnpj_cpf",
+        inverse="_inverse_vat",
     )
 
     inscr_est = fields.Char(
