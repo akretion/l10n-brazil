@@ -138,7 +138,8 @@ class PartyMixin(models.AbstractModel):
 
     @api.onchange("zip")
     def _onchange_zip(self):
-        self.zip = misc.format_zipcode(self.zip, self.country_id.code)
+        if self.country_id:
+            self.zip = misc.format_zipcode(self.zip, self.country_id.code)
 
     # TODO: O metodo tanto no res.partner quanto no res.company chamam
     #  _onchange_state e aqui também deveria, porém por algum motivo

@@ -134,8 +134,11 @@ class Partner(models.Model):
                 ]
 
             if record.vat:
-                domain += [("vat", "=", record.vat), ("id", "!=", record.id)]
-            else:
+                domain += [
+                    ("vat", "=", record.vat),
+                    ("id", "!=", record.id),
+                    ("parent_id", "!=", record.id),
+                ]
                 return
 
             matches = record.env["res.partner"].search(domain)
@@ -256,7 +259,9 @@ class Partner(models.Model):
 
     def create_company(self):
         self.ensure_one()
-        res = super().create_company()
+        res = super(
+            Partner, self.with_context(allow_vat_duplicate=True)
+        ).create_company()
         if res and self.is_br_partner:
             parent = self.parent_id
             parent.legal_name = parent.name

@@ -1,7 +1,5 @@
-#    Thinkopen - Brasil
-#    Copyright (C) Thinkopen Solutions (<http://www.thinkopensolutions.com.br>)
-#    Akretion
-#    Copyright (C) Akretion (<http://www.akretion.com>)
+# 2013 Copyright (C) Thinkopen Solutions (<http://www.thinkopensolutions.com.br>)
+# 2013 Copyright (C) Akretion (<http://www.akretion.com>)
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
 from odoo import api, fields, models
@@ -28,37 +26,26 @@ class Company(models.Model):
         ]
 
     def _inverse_legal_name(self):
-        """Write the l10n_br specific functional fields."""
         for company in self:
             company.partner_id.legal_name = company.legal_name
 
     def _inverse_district(self):
-        """Write the l10n_br specific functional fields."""
         for company in self:
             company.partner_id.district = company.district
 
     def _inverse_street_name(self):
-        """Write the l10n_br specific functional fields."""
         for company in self:
             company.partner_id.street_name = company.street_name
 
     def _inverse_street_number(self):
-        """Write the l10n_br specific functional fields."""
         for company in self:
             company.partner_id.street_number = company.street_number
 
-    def _inverse_vat(self):
-        """Write the l10n_br specific functional fields."""
-        for company in self:
-            company.partner_id.vat = company.vat
-
     def _inverse_inscr_est(self):
-        """Write the l10n_br specific functional fields."""
         for company in self:
             company.partner_id.inscr_est = company.inscr_est
 
     def _inverse_state(self):
-        """Write the l10n_br specific functional fields."""
         for company in self:
             company.partner_id.state_id = company.state_id
 
@@ -112,11 +99,6 @@ class Company(models.Model):
     )
 
     country_id = fields.Many2one(default=lambda self: self.env.ref("base.br"))
-
-    vat = fields.Char(
-        compute="_compute_address",
-        inverse="_inverse_vat",
-    )
 
     inscr_est = fields.Char(
         compute="_compute_address",
