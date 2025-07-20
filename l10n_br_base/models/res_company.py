@@ -98,8 +98,6 @@ class Company(models.Model):
         inverse="_inverse_city_id",
     )
 
-    country_id = fields.Many2one(default=lambda self: self.env.ref("base.br"))
-
     inscr_est = fields.Char(
         compute="_compute_address",
         inverse="_inverse_inscr_est",
