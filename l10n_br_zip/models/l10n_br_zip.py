@@ -167,6 +167,8 @@ class L10nBrZip(models.Model):
     @api.model
     def zip_search(self, obj):
         try:
+#            if obj.name == "teste":
+#                breakpoint()
             domain = self._set_domain(
                 country_id=obj.country_id.id,
                 state_id=obj.state_id.id,
