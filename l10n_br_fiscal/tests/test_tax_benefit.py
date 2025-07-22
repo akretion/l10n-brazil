@@ -9,6 +9,7 @@ class TestTaxBenefit(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        cls.env = cls.env(context=dict(cls.env.context, tracking_disable=True))
         cls.nfe_tax_benefit = cls.env.ref("l10n_br_fiscal.demo_nfe_tax_benefit")
         cls.tax_benefit = cls.env["l10n_br_fiscal.tax.definition"].create(
             {
@@ -43,9 +44,6 @@ class TestTaxBenefit(TransactionCase):
 
         for line in self.nfe_tax_benefit.fiscal_line_ids:
             line._onchange_product_id_fiscal()
-            line._onchange_fiscal_operation_id()
-            line._onchange_fiscal_operation_line_id()
-            line._onchange_fiscal_taxes()
 
             self.assertEqual(
                 line.icms_tax_benefit_id,
