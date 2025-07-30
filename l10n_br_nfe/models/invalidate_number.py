@@ -4,7 +4,8 @@
 from datetime import datetime
 
 from erpbrasil.base.misc import punctuation_rm
-from erpbrasil.transmissao import TransmissaoSOAP
+#from erpbrasil.transmissao import TransmissaoSOAP
+from nfelib.nfe.client.v4_0.nfe import NfeClient
 from nfelib.nfe.ws.edoc_legacy import NFCeAdapter as edoc_nfce
 from nfelib.nfe.ws.edoc_legacy import NFeAdapter as edoc_nfe
 from requests import Session
@@ -18,24 +19,33 @@ class InvalidateNumber(models.Model):
     _inherit = "l10n_br_fiscal.invalidate.number"
 
     def _edoc_processor(self):
-        certificado = self.env.company._get_br_ecertificate()
-        session = Session()
-        session.verify = False
+        #certificado = self.env.company._get_br_ecertificate()
+        #session = Session()
+        #session.verify = False
         params = {
-            "transmissao": TransmissaoSOAP(certificado, session),
+            #"transmissao": TransmissaoSOAP(certificado, session),
             "uf": self.company_id.state_id.ibge_code,
             "versao": "4.00",
             "ambiente": self.company_id.nfe_environment,
         }
 
-        if self.document_type_id.code == "65":
+        if self.document_type_id.code == "65":  # TODO
             params.update(
                 csc_token=self.company_id.nfce_csc_token,
                 csc_code=self.company_id.nfce_csc_code,
             )
-            return edoc_nfce(**params)
+            raise RuntimeError("TODO adapt for NFCe!")
+            # return edoc_nfce(**params)
 
-        return edoc_nfe(**params)
+        return NfeClient(
+            ambiente=self.company_id.nfe_environment,
+            uf=self.company_id.state_id.ibge_code,
+            pkcs12_data=self.company_id.certificate.file,
+            fake_certificate=self.company_id.certificate.file,
+            pkcs12_password=self.company_id.certificate.password,
+            wrap_response=True,
+        )
+        # return edoc_nfe(**params)
 
     def _invalidate(self, document_id=False):
         processador = self._edoc_processor()
@@ -48,7 +58,7 @@ class InvalidateNumber(models.Model):
             justificativa=self.justification.replace("\n", "\\n"),
         )
 
-        processo = processador.envia_inutilizacao(evento=evento)
+        processo = processador.envia_inutilizacao(evento)
 
         event_id = self.event_ids.create_event_save_xml(
             company_id=self.company_id,

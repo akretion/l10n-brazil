@@ -15,9 +15,12 @@ from erpbrasil.transmissao import TransmissaoSOAP
 from lxml import etree
 from nfelib.nfe.bindings.v4_0.leiaute_nfe_v4_00 import TnfeProc
 from nfelib.nfe.bindings.v4_0.nfe_v4_00 import Nfe
+from nfelib.nfe.bindings.v4_0.ret_envi_nfe_v4_00 import RetEnviNfe
+from nfelib.nfe.bindings.v4_0.ret_cons_reci_nfe_v4_00 import RetConsReciNfe
 from nfelib.nfe.ws.edoc_legacy import NFCeAdapter as edoc_nfce
 from nfelib.nfe.ws.edoc_legacy import NFeAdapter as edoc_nfe
 from requests import Session
+from nfelib.nfe.client.v4_0.nfe import NfeClient
 from xsdata.formats.dataclass.parsers import XmlParser
 from xsdata.models.datatype import XmlDateTime
 
@@ -915,12 +918,12 @@ class NFe(spec_models.StackedModel):
             return super()._edoc_processor()
 
         self._check_nfe_environment()
-        certificado = self.company_id._get_br_ecertificate()
-        session = Session()
-        session.verify = False
+        # certificado = self.company_id._get_br_ecertificate()
+        # session = Session()
+        # session.verify = False
 
         params = {
-            "transmissao": TransmissaoSOAP(certificado, session),
+            # "transmissao": TransmissaoSOAP(certificado, session),
             "uf": self.company_id.state_id.ibge_code,
             "versao": self.nfe_version,
             "ambiente": self.nfe_environment,
@@ -931,14 +934,23 @@ class NFe(spec_models.StackedModel):
                 envio_sincrono=self.company_id.nfe_enable_sync_transmission,
                 contingencia=self.company_id.nfe_enable_contingency_ws,
             )
-            return edoc_nfe(**params)
+            # return edoc_nfe(**params)
+            return NfeClient(
+                ambiente=self.nfe_environment,
+                uf=self.company_id.state_id.ibge_code,
+                pkcs12_data=self.company_id.certificate.file,
+                fake_certificate=self.company_id.certificate.file,
+                pkcs12_password=self.company_id.certificate.password,
+                wrap_response=True,
+            )
 
         if self.document_type == MODELO_FISCAL_NFCE:
             params.update(
                 csc_token=self.company_id.nfce_csc_token,
                 csc_code=self.company_id.nfce_csc_code,
             )
-            return edoc_nfce(**params)
+            raise RuntimeError("TODO adapt for NFCe!")
+            # return edoc_nfce(**params)
 
     def _check_nfe_environment(self):
         self.ensure_one()
@@ -991,25 +1003,30 @@ class NFe(spec_models.StackedModel):
         self.ensure_one()
         force_change_status = False
         response = process.resposta
-        webservice = process.webservice
+        #webservice = process.webservice
         if hasattr(process, "protocolo"):
             inf_prot = process.protocolo.infProt
         else:
             # The ´nfeRetAutorizacaoLote´ webservice allows
             # querying a batch of NFe, therefore in this case the return of protNFe
             # is a list, but the localization only sends one NFe per batch.
-            if webservice == "nfeRetAutorizacaoLote":
+            if isinstance(process, RetConsReciNfe):
+                #if webservice == "nfeRetAutorizacaoLote":
                 inf_prot = response.protNFe[0].infProt
             else:
-                inf_prot = response.protNFe.infProt
+                if isinstance(response.protNFe, list):
+                    inf_prot = response.protNFe[0].infProt
+                else:
+                    inf_prot = response.protNFe.infProt
+
         nfe_proc_xml = getattr(process, "processo_xml", None)
         if nfe_proc_xml:
-            nfe_proc_xml = nfe_proc_xml.decode()
+            nfe_proc_xml = nfe_proc_xml
         self._nfe_save_protocol(inf_prot, nfe_proc_xml)
         # For ´nfeConsultaNF´ webservice, the status is checked in the main response.
         # This is crucial because for canceled NFes, the current status does not
         # reflect the authorization protocol status.
-        if webservice == "nfeConsultaNF":
+        if isinstance(process, RetConsReciNfe):
             c_stat = response.cStat
             x_motivo = response.xMotivo
             force_change_status = True
@@ -1135,16 +1152,15 @@ class NFe(spec_models.StackedModel):
         """
         Inject the final NF-e, tag `nfeProc`, into the response.
         """
-        xml_soap = ws_response_process.retorno.content
-        tree_soap = etree.fromstring(xml_soap)
-        prot_nfe_element = tree_soap.xpath(
-            "//nfe:protNFe", namespaces=NFE_XML_NAMESPACE
-        )[0]
-        proc_nfe_xml = self._nfe_create_proc(prot_nfe_element)
+        if isinstance(ws_response_process.resposta.protNFe, list):
+            prot_nfe = ws_response_process.resposta.protNFe[0]
+        else:
+            prot_nfe = ws_response_process
+        proc_nfe_xml = self._nfe_create_proc(prot_nfe)
         if proc_nfe_xml:
             # it is not always possible to create nfeProc.
             parser = XmlParser()
-            nfe_proc = parser.from_string(proc_nfe_xml.decode(), TnfeProc)
+            nfe_proc = parser.from_string(proc_nfe_xml, TnfeProc)
             ws_response_process.processo = nfe_proc
             ws_response_process.processo_xml = proc_nfe_xml
 
@@ -1182,8 +1198,6 @@ class NFe(spec_models.StackedModel):
         nfe_send_xml = base64.b64decode(self.send_file_id.datas)
         tree_envi_nfe = etree.fromstring(nfe_send_xml)
         element_nfe = tree_envi_nfe.xpath("//nfe:NFe", namespaces=NFE_XML_NAMESPACE)[0]
-
-        # Assemble the `nfeProc` using the erpbrasil.edoc library.
         proc_nfe_xml = processor.monta_nfe_proc(
             nfe=element_nfe, prot_nfe=prot_nfe_element
         )
@@ -1256,16 +1270,17 @@ class NFe(spec_models.StackedModel):
         """
         Serialize and send a NFe for authorizaion
         """
-        serialized_nfe = self.serialize()[0]
+        # NOTE: serialize is a bad meth name. use _build_binding?
+        nfe_binding = self.serialize()[0]
         nfe_manager = self._edoc_processor()
         authorization_response = None
-        for service_response in nfe_manager.processar_documento(serialized_nfe):
-            if service_response.webservice not in [
-                "nfeAutorizacaoLote",
-                "nfeRetAutorizacaoLote",
+        for service_response in nfe_manager.processar_lote([nfe_binding]):
+            if type(service_response.resposta) not in [
+                RetEnviNfe,
+                RetConsReciNfe,
             ]:
                 continue
-            if service_response.webservice == "nfeAutorizacaoLote":
+            if isinstance(service_response.resposta, RetEnviNfe):
                 if (
                     service_response.resposta.cStat in SERVICO_PARALIZADO
                     and self.document_type == MODELO_FISCAL_NFCE
@@ -1280,6 +1295,9 @@ class NFe(spec_models.StackedModel):
                     # Commit to secure receipt info for future queries.
                     in_testing = getattr(threading.current_thread(), "testing", False)
                     if not in_testing:
+                        # WTF
+                        # see https://github.com/odoo/odoo/pull/216018
+                        # https://github.com/odoo/odoo/pull/214199
                         self.env.cr.commit()  # pylint: disable=invalid-commit
 
                     # Check if 'nfe_separate_async_process' is set in the company

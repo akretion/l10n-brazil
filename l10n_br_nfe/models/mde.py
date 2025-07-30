@@ -5,8 +5,9 @@ import base64
 import logging
 import re
 
-from erpbrasil.transmissao import TransmissaoSOAP
-from nfelib.nfe.ws.edoc_legacy import MDeAdapter as edoc_mde
+# from erpbrasil.transmissao import TransmissaoSOAP
+#from nfelib.nfe.ws.edoc_legacy import MDeAdapter as edoc_mde
+from nfelib.nfe.client.v4_0.mde import MdeClient
 from requests import Session
 
 from odoo import _, api, fields, models
@@ -122,10 +123,13 @@ class MDe(models.Model):
         session = Session()
         session.verify = False
 
-        return edoc_mde(
-            TransmissaoSOAP(certificado, session),
-            self.company_id.state_id.ibge_code,
-            ambiente=self.dfe_id.environment,
+        return MdeClient(
+            ambiente=self.company_id.nfe_environment,
+            uf=self.company_id.state_id.ibge_code,
+            pkcs12_data=self.company_id.certificate.file,
+            fake_certificate=self.company_id.certificate.file,
+            pkcs12_password=self.company_id.certificate.password,
+            wrap_response=True,
         )
 
     @api.model
