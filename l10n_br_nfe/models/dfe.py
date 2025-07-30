@@ -3,7 +3,7 @@
 
 from datetime import datetime
 
-from lxml import objectify
+from lxml import objectify, etree
 from nfelib.nfe.bindings.v4_0.leiaute_nfe_v4_00 import TnfeProc
 
 from odoo import api, fields, models
@@ -21,21 +21,25 @@ class DFe(models.Model):
     )
 
     def _process_distribution(self, result):
-        for doc in result.resposta.loteDistDFeInt.docZip:
-            xml = utils.parse_gzip_xml(doc.valueOf_).read()
+        # is there a way to get the docZip element text using xsdata? ->use etree
+        response_xml = etree.fromstring(result.retorno.content)
+        ns = {"nfe": "http://www.portalfiscal.inf.br/nfe"}
+        docZip = response_xml.xpath("//nfe:docZip", namespaces=ns)
+        for doc in docZip:
+            xml = utils.parse_gzip_xml(doc.text).read()
             root = objectify.fromstring(xml)
 
             mde_id = self.env["l10n_br_nfe.mde"].search(
                 [
-                    ("nsu", "=", utils.format_nsu(doc.NSU)),
+                    ("nsu", "=", utils.format_nsu(doc.attrib['NSU'])),
                     ("company_id", "=", self.company_id.id),
                 ],
                 limit=1,
             )
             if not mde_id:
-                mde_id = self._create_mde_from_schema(doc.schema, root)
+                mde_id = self._create_mde_from_schema(doc.attrib['schema'], root)
                 if mde_id:
-                    mde_id.nsu = doc.NSU
+                    mde_id.nsu = doc.attrib['NSU']
                     mde_id.create_xml_attachment(xml)
 
     @api.model
