@@ -239,8 +239,10 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
     def _compute_tax_fields(self):
         for line in self:
             if (
-                hasattr(line, "document_id") and line.document_id.imported_document
-            ):  # or not line.fiscal_tax_ids:
+                hasattr(line, "document_id")
+                and line.document_id.imported_document
+                or not line.fiscal_tax_ids
+            ):
                 continue
             compute_result = line.fiscal_tax_ids.compute_taxes(
                 company=line.company_id,
@@ -383,7 +385,7 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
         return tax_values
 
     def _compute_price_unit_fiscal(self):
-        for line in self:
+        for line in self.filtered(lambda line: line.fiscal_operation_id):
             line.price_unit = {
                 "sale_price": line.product_id.list_price,
                 "cost_price": line.product_id.standard_price,
@@ -474,7 +476,7 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
                     ind_final=line.ind_final,
                 )
                 line.cfop_id = mapping_result["cfop"]
-                if self._is_imported():
+                if line._is_imported():
                     return
                 line.ipi_guideline_id = mapping_result["ipi_guideline"]
                 line.icms_tax_benefit_id = mapping_result["icms_tax_benefit_id"]
@@ -484,6 +486,7 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
                 line.fiscal_tax_ids = taxes
                 line.comment_ids = line.fiscal_operation_line_id.comment_ids
             else:
+                line.fiscal_tax_ids = []
                 line.cfop_id = False
 
     @api.onchange("product_id")
@@ -873,6 +876,7 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
         return ["icms_relief_value"]
 
     def _is_imported(self):
+        self.ensure_one()
         # When the mixin is used for instance
         # in a PO line or SO line, there is no document_id
         # and we consider the document is not imported
