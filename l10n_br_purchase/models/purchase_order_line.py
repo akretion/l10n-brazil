@@ -94,6 +94,37 @@ class PurchaseOrderLine(models.Model):
             "ind_final",
         ]
 
+    def _get_tax_fields_dependencies(self):
+        return [
+            "fiscal_tax_ids",
+            # "company_id",  # not precompute in purchase
+            # "partner_id",  # not precompute in purchase
+            "ind_final",
+            "product_id",
+            # "price_unit",  # not precompute in purchase
+            "quantity",
+            "uom_id",
+            # "fiscal_price",  # not precompute in purchase
+            "fiscal_quantity",
+            "uot_id",
+            "discount_value",
+            "insurance_value",
+            "ii_customhouse_charges",
+            "ii_iof_value",
+            "other_value",
+            "freight_value",
+            "ncm_id",
+            "nbs_id",
+            "nbm_id",
+            "cest_id",
+            "fiscal_operation_line_id",
+            "cfop_id",
+            "icmssn_range_id",
+            "icms_origin",
+            "icms_cst_id",
+            "icms_relief_id",
+        ]
+
     @api.depends(
         "product_uom_qty",
         "price_unit",
