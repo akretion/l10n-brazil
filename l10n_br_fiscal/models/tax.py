@@ -57,6 +57,8 @@ TAX_DICT_VALUES = {
     "icms_dest_value": 0.00,
 }
 
+TAX_KEYS = ['name', 'fiscal_tax_id', 'tax_include', 'tax_withholding', 'tax_domain', 'cst_id', 'cst_code', 'base_type', 'base', 'base_reduction', 'percent_amount', 'percent_reduction', 'value_amount', 'uot_id', 'tax_value', 'add_to_base', 'remove_from_base', 'compute_reduction', 'compute_with_tax_value', 'icms_dest_base', 'icms_origin_value', 'icms_dest_value']
+
 ICMS_ST_BASE_TYPE_REL = {
     "0": TAX_BASE_TYPE_VALUE,
     "1": TAX_BASE_TYPE_VALUE,
@@ -185,6 +187,7 @@ class Tax(models.Model):
         string="Tax Domain",
         readonly=True,
         store=True,
+        index=True,
     )
 
     cst_in_id = fields.Many2one(
@@ -778,7 +781,7 @@ class Tax(models.Model):
         sequence = self._compute_tax_sequence(taxes, **kwargs)
 
         for tax in self.sorted(key=lambda t: sequence.get(t.tax_domain)):
-            taxes[tax.tax_domain] = dict(TAX_DICT_VALUES)
+            taxes[tax.tax_domain] = {key: False for key in TAX_KEYS}
             # Define CST FROM TAX
             operation_line = kwargs.get("operation_line")
             fiscal_operation_type = operation_line.fiscal_operation_type or FISCAL_OUT
