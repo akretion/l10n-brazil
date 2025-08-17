@@ -1,0 +1,6 @@
+signxml==3.2.2
+odoo-addon-l10n_br_base @ git+https://github.com/OCA/l10n-brazil.git@refs/pull/3964/head#subdirectory=l10n_br_base
+odoo-addon-l10n_br_fiscal @ git+https://github.com/OCA/l10n-brazil.git@refs/pull/3965/head#subdirectory=l10n_br_fiscal
+odoo-addon-l10n_br_fiscal_certificate @ git+https://github.com/OCA/l10n-brazil.git@refs/pull/3966/head#subdirectory=l10n_br_fiscal_certificate
+odoo-addon-l10n_br_fiscal_edi @ git+https://github.com/OCA/l10n-brazil.git@refs/pull/3967/head#subdirectory=l10n_br_fiscal_edi
+
