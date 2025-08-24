@@ -42,6 +42,7 @@
         <field name="legal_nature_id" ref="l10n_br_fiscal.legal_nature_2062" />
         <field name="cnae_main_id" ref="l10n_br_fiscal.cnae_3101200" />
         <field name="document_type_id" ref="l10n_br_fiscal.document_55" />
+        <field name="annual_revenue">815000.00</field>
     </record>
 
     <record id="icms_tax_definition_main_company" model="l10n_br_fiscal.tax.definition">
