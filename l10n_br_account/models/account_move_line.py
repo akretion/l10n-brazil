@@ -4,8 +4,11 @@
 
 from contextlib import contextmanager
 
+import logging
 from odoo import Command, _, api, fields, models
-from odoo.tools import frozendict
+from odoo.tools import float_is_zero, frozendict
+
+_logger = logging.getLogger(__name__)
 
 
 class AccountMoveLine(models.Model):
@@ -521,11 +524,31 @@ class AccountMoveLine(models.Model):
         elif self.move_id.is_purchase_document(include_receipts=True):
             user_type = "purchase"
 
-        return self.fiscal_tax_ids.account_taxes(
+        taxes = self.fiscal_tax_ids.account_taxes(
             user_type=user_type,
             fiscal_operation=self.fiscal_operation_id,
             company=self.company_id,
         )
+        if (
+            self.fiscal_tax_ids
+            and not taxes
+            and not float_is_zero(self.amount_taxed, precision_digits=2)
+            and not self.env["ir.config_parameter"]
+            .sudo()
+            .get_param("l10n_br_coa.disable_auto_coa_populate")
+        ):
+            _logger.warning(
+                f"no account.tax found for line {self.name} ID {self.id}."
+                "will attempt to reload the fiscal taxes and populate"
+                "the chart of acccounts for the Brazilian taxes."
+            )
+            self.company_id.chart_template_id.load_fiscal_taxes([self.company_id])
+            taxes = self.fiscal_tax_ids.account_taxes(
+                user_type=user_type,
+                fiscal_operation=self.fiscal_operation_id,
+                company=self.company_id,
+            )
+        return taxes
 
     @api.constrains("product_uom_id")
     def _check_product_uom_category_id(self):
