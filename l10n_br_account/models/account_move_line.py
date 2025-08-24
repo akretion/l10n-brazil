@@ -2,9 +2,9 @@
 # Copyright (C) 2019 - TODAY Raphaël Valyi - Akretion
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
+import logging
 from contextlib import contextmanager
 
-import logging
 from odoo import Command, _, api, fields, models
 from odoo.tools import float_is_zero, frozendict
 
@@ -533,13 +533,15 @@ class AccountMoveLine(models.Model):
             self.fiscal_tax_ids
             and not taxes
             and not float_is_zero(self.amount_taxed, precision_digits=2)
+            and self.move_id.company_id.country_id.code == "BR"
+            and not self.move_id.fiscal_position_id
             and not self.env["ir.config_parameter"]
             .sudo()
             .get_param("l10n_br_coa.disable_auto_coa_populate")
         ):
-            _logger.warning(
-                f"no account.tax found for line {self.name} ID {self.id}."
-                "will attempt to reload the fiscal taxes and populate"
+            _logger.info(
+                f"No account.tax found for line {self.name} ID {self.id}. "
+                "Will attempt to reload the fiscal taxes and populate "
                 "the chart of acccounts for the Brazilian taxes."
             )
             self.company_id.chart_template_id.load_fiscal_taxes([self.company_id])
