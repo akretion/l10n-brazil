@@ -61,32 +61,54 @@ class AccountMoveLine(models.Model):
         for line in self:
             # we use proxy_product_id to avoid triggering _compute_product_fiscal_fields
             # which would erase custom values such as custom ncm_id
-            line.proxy_product_id = line.product_id
+            line.proxy_product_id = line.product_id  # TODO change for protecting?
         return super()._inverse_product_id()
 
     @api.onchange("name")
     def _inverse_name(self):
         for line in self:
             if line.fiscal_document_line_id:
-                line.fiscal_document_line_id.name = line.name
+                with self.env.protecting(
+                    set(line.fiscal_document_line_id._fields.values()),
+                    line.fiscal_document_line_id,
+                ):
+                    line.fiscal_document_line_id.name = line.name
 
     @api.onchange("quantity")
     def _inverse_quantity(self):
         for line in self:
             if line.fiscal_document_line_id:
-                line.fiscal_document_line_id.quantity = line.quantity
+                with self.env.protecting(
+                    set(line.fiscal_document_line_id._fields.values()),
+                    line.fiscal_document_line_id,
+                ):
+                    line.fiscal_document_line_id.quantity = line.quantity
 
     @api.onchange("price_unit")
     def _inverse_price_unit(self):
         for line in self:
             if line.fiscal_document_line_id:
-                line.fiscal_document_line_id.price_unit = line.price_unit
+                with self.env.protecting(
+                    set(line.fiscal_document_line_id._fields.values()),
+                    line.fiscal_document_line_id,
+                ):
+                    line.fiscal_document_line_id.price_unit = line.price_unit
 
     @api.onchange("product_uom_id")
     def _inverse_product_uom_id(self):
         for line in self:
             if line.fiscal_document_line_id:
-                line.fiscal_document_line_id.uom_id = line.product_uom_id
+                with self.env.protecting(
+                    set(
+                        [
+                            f
+                            for f in line.fiscal_document_line_id._fields.values()
+                            if f.name not in ("uom_id", "uot_id")
+                        ]
+                    ),
+                    line.fiscal_document_line_id,
+                ):
+                    line.fiscal_document_line_id.uom_id = line.product_uom_id
 
     @api.depends(
         "quantity",
@@ -123,6 +145,13 @@ class AccountMoveLine(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         for values in vals_list:
+            if (
+                "no_fiscal_recompute_on_create" in self._context
+                and "fiscal_tax_ids" in values
+            ):
+                self = self.with_context(
+                    skip_compute_fiscal_tax_ids=True, skip_compute_tax_fields=True
+                )
             if values.get("fiscal_document_line_id"):
                 continue
 

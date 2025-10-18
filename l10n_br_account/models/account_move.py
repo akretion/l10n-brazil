@@ -96,7 +96,8 @@ class AccountMove(models.Model):
     def _inverse_company_id(self):
         for move in self:
             for doc in move.fiscal_document_ids:
-                doc.company_id = move.company_id
+                with self.env.protecting(set(doc._fields.values()), doc):
+                    doc.company_id = move.company_id
         return super()._inverse_company_id()
 
     @api.onchange("currency_id")
@@ -110,7 +111,8 @@ class AccountMove(models.Model):
     def _inverse_partner_id(self):
         for move in self:
             for doc in move.fiscal_document_ids:
-                doc.partner_id = move.partner_id
+                with self.env.protecting(set(doc._fields.values()), doc):
+                    doc.partner_id = move.partner_id
         return super()._inverse_partner_id()
 
     @api.onchange("user_id")

@@ -204,7 +204,9 @@ class TestMoveEdition(TransactionCase):
             )
 
             # ensure manually setting a product_uom_id is properly sync'ed:
-            self.assertEqual(line_form.product_uom_id, self.env.ref("uom.product_uom_unit"))
+            self.assertEqual(
+                line_form.product_uom_id, self.env.ref("uom.product_uom_unit")
+            )
             self.assertEqual(line_form.uot_id, self.env.ref("uom.product_uom_unit"))
             line_form.product_uom_id = self.env.ref("l10n_br_fiscal.UOM_PC")
             self.assertEqual(line_form.uot_id, self.env.ref("l10n_br_fiscal.UOM_PC"))
