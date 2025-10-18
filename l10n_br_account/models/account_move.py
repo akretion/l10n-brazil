@@ -96,23 +96,36 @@ class AccountMove(models.Model):
     def _inverse_company_id(self):
         for move in self:
             for doc in move.fiscal_document_ids:
-                with self.env.protecting(set(doc._fields.values()), doc):
+                if self._context.get("no_fiscal_recompute_on_create"):
+                    with self.env.protecting(set(doc._fields.values()), doc):
+                        doc.company_id = move.company_id
+                else:
                     doc.company_id = move.company_id
+
         return super()._inverse_company_id()
 
     @api.onchange("currency_id")
     def _inverse_currency_id(self):
         for move in self:
             for doc in move.fiscal_document_ids:
-                doc.currency_id = move.currency_id
+                if self._context.get("no_fiscal_recompute_on_create"):
+                    with self.env.protecting(set(doc._fields.values()), doc):
+                        doc.currency_id = move.currency_id
+                else:
+                    doc.currency_id = move.currency_id
+
         return super()._inverse_currency_id()
 
     @api.onchange("partner_id")
     def _inverse_partner_id(self):
         for move in self:
             for doc in move.fiscal_document_ids:
-                with self.env.protecting(set(doc._fields.values()), doc):
+                if self._context.get("no_fiscal_recompute_on_create"):
+                    with self.env.protecting(set(doc._fields.values()), doc):
+                        doc.partner_id = move.partner_id
+                else:
                     doc.partner_id = move.partner_id
+
         return super()._inverse_partner_id()
 
     @api.onchange("user_id")
@@ -225,6 +238,15 @@ class AccountMove(models.Model):
                 sub_tree_node.attrib["editable"] = ""
 
         return arch, view
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        if "no_fiscal_recompute_on_create" in self._context:
+            self = self.with_context(
+                skip_compute_fiscal_tax_ids=True,
+                skip_compute_tax_fields=True,
+            )
+        return super().create(vals_list)
 
     @api.depends(
         "line_ids.matched_debit_ids.debit_move_id.move_id.payment_id.is_matched",
