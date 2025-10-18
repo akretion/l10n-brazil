@@ -96,6 +96,8 @@ class TestDocumentEdition(TransactionCase):
             self.assertEqual(
                 line_form.ipi_tax_id, self.env.ref("l10n_br_fiscal.tax_ipi_3_25")
             )
+            line_form.icmsfcp_base = line_form.price_unit
+            line_form.icmsfcp_value = 3  # ensure manually setting FCP value works
 
         doc = doc_form.save()
         line = doc.fiscal_line_ids[0]
@@ -115,6 +117,8 @@ class TestDocumentEdition(TransactionCase):
         )
         self.assertEqual(line.ipi_tax_id, self.env.ref("l10n_br_fiscal.tax_ipi_3_25"))
         self.assertEqual(line.icms_value, 37.17)
+        self.assertEqual(line.icmsfcp_base, line.price_unit)
+        self.assertEqual(line.icmsfcp_value, 3)
 
     def test_product_fiscal_factor(self):
         doc_form = Form(
