@@ -96,36 +96,21 @@ class AccountMove(models.Model):
     def _inverse_company_id(self):
         for move in self:
             for doc in move.fiscal_document_ids:
-                if self._context.get("no_fiscal_recompute_on_create"):
-                    with self.env.protecting(set(doc._fields.values()), doc):
-                        doc.company_id = move.company_id
-                else:
-                    doc.company_id = move.company_id
-
+                doc.company_id = move.company_id
         return super()._inverse_company_id()
 
     @api.onchange("currency_id")
     def _inverse_currency_id(self):
         for move in self:
             for doc in move.fiscal_document_ids:
-                if self._context.get("no_fiscal_recompute_on_create"):
-                    with self.env.protecting(set(doc._fields.values()), doc):
-                        doc.currency_id = move.currency_id
-                else:
-                    doc.currency_id = move.currency_id
-
+                doc.currency_id = move.currency_id
         return super()._inverse_currency_id()
 
     @api.onchange("partner_id")
     def _inverse_partner_id(self):
         for move in self:
             for doc in move.fiscal_document_ids:
-                if self._context.get("no_fiscal_recompute_on_create"):
-                    with self.env.protecting(set(doc._fields.values()), doc):
-                        doc.partner_id = move.partner_id
-                else:
-                    doc.partner_id = move.partner_id
-
+                doc.partner_id = move.partner_id
         return super()._inverse_partner_id()
 
     @api.onchange("user_id")

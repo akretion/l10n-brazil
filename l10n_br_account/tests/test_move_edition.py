@@ -254,7 +254,6 @@ class TestMoveEdition(TransactionCase):
             line_form.icmsfcp_value = 3  # ensure manually setting FCP value works
             self.assertEqual(line_form.icmsfcp_value, 3)
 
-        self.env.registry.track_add_to_compute = True
         move = move_form.save()
 
         self.assertEqual(move.state, "draft")
