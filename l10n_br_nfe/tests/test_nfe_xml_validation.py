@@ -66,7 +66,7 @@ class TestXMLValidation(TransactionCase):
         )
 
         # Line 1
-        line = document_line_model.create(
+        line = document_line_model.with_context(force_fiscal_recompute=True).create(
             {
                 "document_id": document.id,
                 "company_id": document.company_id.id,
@@ -95,7 +95,7 @@ class TestXMLValidation(TransactionCase):
         line._onchange_fiscal_taxes()
 
         # Line 2 - using two lines to test the XML totals
-        line2 = document_line_model.create(
+        line2 = document_line_model.with_context(force_fiscal_recompute=True).create(
             {
                 "document_id": document.id,
                 "company_id": document.company_id.id,
