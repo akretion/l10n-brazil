@@ -716,21 +716,22 @@ class CTe(spec_models.StackedModel):
                 xsd_fields.remove("cte40_ICMSOutraUF")
 
             xsd_fields = [record.cte40_choice_icms]
-            icms_tag = (
-                record.cte40_choice_icms.replace("cte40_", "")
-                .replace("ICMSSN", "Icmssn")
-                .replace("ICMS", "Icms")
-            )
-            binding_module = sys.modules[record._get_spec_property("binding_module")]
-            icms = binding_module.Timp
-            icms_binding = getattr(icms, icms_tag)
-            icms_dict = record._export_fields_cte40_icms()
-            sliced_icms_dict = {
-                key: icms_dict.get(key)
-                for key in icms_binding.__dataclass_fields__.keys()
-                if icms_dict.get(key)
-            }
-            export_dict[icms_tag.upper()] = icms_binding(**sliced_icms_dict)
+            if record.cte40_choice_icms:
+                icms_tag = (
+                    record.cte40_choice_icms.replace("cte40_", "")
+                    .replace("ICMSSN", "Icmssn")
+                    .replace("ICMS", "Icms")
+                )
+                binding_module = sys.modules[record._get_spec_property("binding_module")]
+                icms = binding_module.Timp
+                icms_binding = getattr(icms, icms_tag)
+                icms_dict = record._export_fields_cte40_icms()
+                sliced_icms_dict = {
+                    key: icms_dict.get(key)
+                    for key in icms_binding.__dataclass_fields__.keys()
+                    if icms_dict.get(key)
+                }
+                export_dict[icms_tag.upper()] = icms_binding(**sliced_icms_dict)
 
     # ##########################
     # # CT-e tag: ICMSUFFim

@@ -38,7 +38,9 @@ class TestCTeSerialize(TransactionCase):
 
         cte.fiscal_line_ids.name = "Frete"
         for line in cte.fiscal_line_ids:
+            line._compute_fiscal_tax_ids()
             line.price_unit = 100
+            line._compute_tax_fields()
         cte.fiscal_line_ids.cfop_id = cte.env.ref("l10n_br_fiscal.cfop_5352")
 
         cte.action_document_confirm()
