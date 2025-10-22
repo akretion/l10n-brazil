@@ -153,7 +153,6 @@ class TestMoveEdition(TransactionCase):
         move_form = Form(
             self.env["account.move"].with_context(
                 default_move_type="out_invoice",
-                skip_fiscal_recompute_on_create=True,
             )
         )
         move_form.partner_id = self.env.ref("l10n_br_base.res_partner_cliente5_pe")
