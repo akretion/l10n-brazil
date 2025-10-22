@@ -114,3 +114,11 @@ class DocumentLine(models.Model):
             line.additional_data = line.comment_ids.compute_message(
                 line.__document_comment_vals(), line.manual_additional_data
             )
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        if "force_fiscal_recompute" not in self._context:
+            self = self.with_context(
+                skip_compute_fiscal_tax_ids=True, skip_compute_tax_fields=True
+            )
+        return super().create(vals_list)
