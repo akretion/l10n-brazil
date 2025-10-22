@@ -4,8 +4,10 @@
 from copy import deepcopy
 
 from lxml import etree
+from lxml.builder import E
 
 from odoo import Command, api, models
+from odoo.fields import NewId
 
 from ..constants.fiscal import CFOP_DESTINATION_EXPORT, FISCAL_IN, TAX_DOMAIN_ICMS
 from ..constants.icms import (
@@ -85,6 +87,22 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
         Inject common fiscal fields into view placeholder elements.
         Used for invoice line, sale order line, purchase order line...
         """
+
+        missing_line_fields = set(
+            [
+                k
+                for k, v in filter(
+                    lambda item: item[1].compute
+                    in (
+                        "_compute_tax_fields",
+                        "_compute_fiscal_tax_id",
+                        "_compute_product_fiscal_fields",
+                    ),
+                    self.env["l10n_br_fiscal.document.line.mixin"]._fields.items(),
+                )
+            ]
+        )
+
         fiscal_view = self.env.ref(
             "l10n_br_fiscal.document_fiscal_line_mixin_form"
         ).sudo()
@@ -133,6 +151,8 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
                         e.attrib["name"] for e in target_node if e.tag == "field"
                     ]
                     for fiscal_node in fiscal_nodes:
+                        if fiscal_node.attrib["name"] in missing_line_fields:
+                            missing_line_fields.remove(fiscal_node.attrib["name"])
                         if fiscal_node.attrib["name"] in existing_fields:
                             continue
                         field = deepcopy(fiscal_node)
@@ -140,6 +160,12 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
                             field.attrib["invisible"] = "0"
                             field.attrib["optional"] = "hide"
                         target_node.append(field)
+                    for fname in missing_line_fields:
+                        target_node.append(
+                            E.field(
+                                name=fname, string=fname, invisible="0", force_save="1"
+                            )
+                        )
         return doc
 
     @api.model
@@ -169,7 +195,13 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
         "fiscal_operation_line_id",
     )
     def _compute_fiscal_amounts(self):
-        for record in self:
+        if any(not isinstance(rec.id, NewId) for rec in self):
+            skip_compute_tax_fields = True
+        else:
+            skip_compute_tax_fields = False
+        for record in self.with_context(
+            skip_compute_tax_fields=skip_compute_tax_fields
+        ):
             round_curr = record.currency_id or self.env.ref("base.BRL")
 
             # Total value of products or services
