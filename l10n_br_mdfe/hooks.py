@@ -13,6 +13,7 @@ _logger = logging.getLogger(__name__)
 
 
 def post_init_hook(cr, registry):
+    return
     env = api.Environment(cr, SUPERUSER_ID, {})
     cr.execute("select demo from ir_module_module where name='l10n_br_mdfe';")
     is_demo = cr.fetchone()[0]
