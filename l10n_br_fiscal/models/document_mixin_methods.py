@@ -137,7 +137,8 @@ class FiscalDocumentMixinMethods(models.AbstractModel):
 
         fields = self._get_amount_fields()
         for doc in self.filtered(lambda m: m.fiscal_operation_id).with_context(
-            skip_compute_tax_fields=True
+            #skip_compute_tax_fields=True,
+            from_doc_compute_fiscal_amount=True,
         ):
             values = {key: 0.0 for key in fields}
             for line in doc._get_amount_lines():

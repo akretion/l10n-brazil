@@ -274,7 +274,11 @@ class FiscalDocumentLineMixin(models.AbstractModel):
     )
 
     amount_fiscal = fields.Monetary(
-        compute="_compute_fiscal_amounts",
+        #        compute="_compute_fiscal_amounts",
+        compute="_compute_tax_fields",
+        store=True,
+        precompute=True,
+        readonly=False,
     )
 
     price_gross = fields.Monetary(
@@ -283,38 +287,70 @@ class FiscalDocumentLineMixin(models.AbstractModel):
             "Total value of products or services (quantity x unit price)"
             "before any discounts."
         ),
-        compute="_compute_fiscal_amounts",
+        #        compute="_compute_fiscal_amounts",
+        compute="_compute_tax_fields",
+        store=True,
+        precompute=True,
+        readonly=False,
     )
 
     fiscal_amount_untaxed = fields.Monetary(
-        compute="_compute_fiscal_amounts",
+        #        compute="_compute_fiscal_amounts",
+        compute="_compute_tax_fields",
+        store=True,
+        precompute=True,
+        readonly=False,
     )
 
     fiscal_amount_tax = fields.Monetary(
-        compute="_compute_fiscal_amounts",
+        #        compute="_compute_fiscal_amounts",
+        compute="_compute_tax_fields",
+        store=True,
+        precompute=True,
+        readonly=False,
     )
 
     amount_taxed = fields.Monetary(
-        compute="_compute_fiscal_amounts",
+        #        compute="_compute_fiscal_amounts",
+        compute="_compute_tax_fields",
+        store=True,
+        precompute=True,
+        readonly=False,
     )
 
     fiscal_amount_total = fields.Monetary(
-        compute="_compute_fiscal_amounts",
+        #        compute="_compute_fiscal_amounts",
+        compute="_compute_tax_fields",
+        store=True,
+        precompute=True,
+        readonly=False,
     )
 
     financial_total = fields.Monetary(
         string="Amount Financial",
-        compute="_compute_fiscal_amounts",
+        #        compute="_compute_fiscal_amounts",
+        compute="_compute_tax_fields",
+        store=True,
+        precompute=True,
+        readonly=False,
     )
 
     financial_total_gross = fields.Monetary(
         string="Financial Gross Amount",
         help="Total amount before any discounts are applied.",
-        compute="_compute_fiscal_amounts",
+        #compute="_compute_fiscal_amounts",
+        compute="_compute_tax_fields",
+        store=True,
+        precompute=True,
+        readonly=False,
     )
 
     financial_discount_value = fields.Monetary(
-        compute="_compute_fiscal_amounts",
+        #compute="_compute_fiscal_amounts",
+        compute="_compute_tax_fields",
+        store=True,
+        precompute=True,
+        readonly=False,
     )
 
     amount_tax_included = fields.Monetary()
@@ -607,10 +643,10 @@ class FiscalDocumentLineMixin(models.AbstractModel):
     # vICMSDeson - Valor do ICMS desonerado
     icms_relief_value = fields.Monetary(
         string="ICMS Relief Value",
-        compute="_compute_tax_fields",
-        store=True,
-        precompute=True,
-        readonly=False,
+        #        compute="_compute_tax_fields",
+        #store=True,
+        #precompute=True,
+        #readonly=False,
     )
 
     # ICMS ST Fields

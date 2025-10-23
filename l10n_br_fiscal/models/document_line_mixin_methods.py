@@ -182,7 +182,7 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
         "other_value",
         "freight_value",
         "fiscal_quantity",
-        "amount_tax_not_included",
+        "amount_tax_not_included",  # SURE or via _add_fields_to_amount?
         "amount_tax_included",
         "amount_tax_withholding",
         "uot_id",
@@ -191,16 +191,34 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
         "company_id",
         "price_unit",
         "quantity",
-        "icms_relief_id",
-        "fiscal_operation_line_id",
+        #"icms_relief_id",
+        "fiscal_operation_line_id", # SURE
+        "icms_relief_value",
     )
-    def _compute_fiscal_amounts(self):
-        if any(not isinstance(rec.id, NewId) for rec in self):
-            skip_compute_tax_fields = True
+    def FIXME_compute_fiscal_amounts(self):
+        import traceback
+        if self._ids:
+            print("\n******C FISC AMOUNTS ********** skip_line_sync", self._context.get("skip_invoice_line_sync"), self._ids, "from_doc", self._context.get("from_doc_compute_fiscal_amount"), "from_move_create", self._context.get("from_move_create"))
+        traceback.print_stack(limit=16)
+        if False:# not any(isinstance(rec.id, NewId) for rec in self):  # ICMS relief case
+            #we cannot skip _compute_tax_fields because of the _add/_rm_fields_to_amount like icms_relief_value
+            if self._context.get("skip_invoice_line_sync"): # and not from_doc
+                skip_compute_tax_fields=False
+            elif self._context.get("from_doc_compute_fiscal_amount"): # and not from_doc
+                skip_compute_tax_fields=False
+
+
         else:
-            skip_compute_tax_fields = False
+
+            if any(not isinstance(rec.id, NewId) for rec in self):
+                skip_compute_tax_fields = True
+            else:
+                skip_compute_tax_fields = False
         for record in self.with_context(
             skip_compute_tax_fields=skip_compute_tax_fields
+            #skip_compute_tax_fields=True #-> test_move_edition OK, landed_cost KO, test_venda_with_icms_reduction_with_relief KO (unbalanced)
+            # BUT the if self_context... breaks self.assertEqual(aml.icmsfcp_base, aml.price_unit) in test_move_edition
+            #skip_compute_tax_fields=skip_compute_tax_fields if self._context.get("from_doc_compute_fiscal_amount") else False
         ):
             round_curr = record.currency_id or self.env.ref("base.BRL")
 
@@ -469,6 +487,54 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
                 wrapped_line.update(to_update)
             else:
                 wrapped_line.write(to_update)
+
+
+            round_curr = wrapped_line.currency_id or self.env.ref("base.BRL")
+
+            # Total value of products or services
+            wrapped_line.price_gross = round_curr.round(wrapped_line.price_unit * wrapped_line.quantity)
+            wrapped_line.amount_fiscal = wrapped_line.price_gross - wrapped_line.discount_value
+            wrapped_line.fiscal_amount_tax = wrapped_line.amount_tax_not_included
+
+            add_to_amount = sum(wrapped_line[a] for a in wrapped_line._add_fields_to_amount())
+            rm_to_amount = sum(wrapped_line[r] for r in wrapped_line._rm_fields_to_amount())
+
+            wrapped_line.fiscal_amount_untaxed = (
+                wrapped_line.price_gross
+                - wrapped_line.discount_value
+                + add_to_amount
+                - rm_to_amount
+            )
+
+            # Valor do documento (NF)
+            wrapped_line.fiscal_amount_total = (
+                wrapped_line.fiscal_amount_untaxed + wrapped_line.fiscal_amount_tax
+            )
+
+            # Valor Liquido (TOTAL + IMPOSTOS - RETENÇÕES)
+            wrapped_line.amount_taxed = (
+                wrapped_line.fiscal_amount_total - wrapped_line.amount_tax_withholding
+            )
+
+            # Valor do documento (NF) - RETENÇÕES
+            wrapped_line.fiscal_amount_total = wrapped_line.amount_taxed
+
+            # Valor financeiro
+            if (
+                wrapped_line.fiscal_operation_line_id
+                and wrapped_line.fiscal_operation_line_id.add_to_amount
+                and (not wrapped_line.cfop_id or wrapped_line.cfop_id.finance_move)
+            ):
+                wrapped_line.financial_total = wrapped_line.amount_taxed
+                wrapped_line.financial_total_gross = (
+                    wrapped_line.financial_total + wrapped_line.discount_value
+                )
+                wrapped_line.financial_discount_value = wrapped_line.discount_value
+            else:
+                wrapped_line.financial_total_gross = wrapped_line.financial_total = 0.0
+                wrapped_line.financial_discount_value = 0.0
+
+
 
     def _prepare_tax_fields(self, compute_result):
         self.ensure_one()
