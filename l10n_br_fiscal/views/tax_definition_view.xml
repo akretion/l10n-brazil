@@ -32,6 +32,27 @@
         </field>
     </record>
 
+    <record id="tax_definition_icms_benefit_tree" model="ir.ui.view">
+        <field name="name">l10n_br_fiscal.tax.definition.icms.benefit.tree</field>
+        <field name="model">l10n_br_fiscal.tax.definition</field>
+        <field name="arch" type="xml">
+            <tree
+                decoration-info="state in ('draft', 'review')"
+                decoration-muted="state == 'expired'"
+            >
+                <field name="state" invisible="1" />
+                <field name="tax_group_id" invisible="1" />
+                <field name="code" />
+                <field name="description" />
+                <field name="state_from_id" />
+                <field name="state_to_ids" />
+                <field name="tax_id" />
+                <field name="cst_code" />
+            </tree>
+        </field>
+    </record>
+
+
     <record id="tax_definition_form" model="ir.ui.view">
         <field name="name">l10n_br_fiscal.tax.definition.form</field>
         <field name="model">l10n_br_fiscal.tax.definition</field>
