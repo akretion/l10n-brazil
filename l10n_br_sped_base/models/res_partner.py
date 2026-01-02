@@ -9,6 +9,6 @@ class Partner(models.Model):
 
     is_accountant = fields.Boolean(string="Is accountant?")
 
-    crc_code = fields.Char(string="CRC Code", size=18, unaccent=False)
+    crc_code = fields.Char(string="CRC Code", size=18)
 
     crc_state_id = fields.Many2one(comodel_name="res.country.state", string="CRC State")
