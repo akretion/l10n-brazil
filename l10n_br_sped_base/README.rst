@@ -17,13 +17,13 @@ SPED Base
     :target: http://www.gnu.org/licenses/agpl-3.0-standalone.html
     :alt: License: AGPL-3
 .. |badge3| image:: https://img.shields.io/badge/github-OCA%2Fl10n--brazil-lightgray.png?logo=github
-    :target: https://github.com/OCA/l10n-brazil/tree/17.0/l10n_br_sped_base
+    :target: https://github.com/OCA/l10n-brazil/tree/18.0/l10n_br_sped_base
     :alt: OCA/l10n-brazil
 .. |badge4| image:: https://img.shields.io/badge/weblate-Translate%20me-F47D42.png
-    :target: https://translation.odoo-community.org/projects/l10n-brazil-17-0/l10n-brazil-17-0-l10n_br_sped_base
+    :target: https://translation.odoo-community.org/projects/l10n-brazil-18-0/l10n-brazil-18-0-l10n_br_sped_base
     :alt: Translate me on Weblate
 .. |badge5| image:: https://img.shields.io/badge/runboat-Try%20me-875A7B.png
-    :target: https://runboat.odoo-community.org/builds?repo=OCA/l10n-brazil&target_branch=17.0
+    :target: https://runboat.odoo-community.org/builds?repo=OCA/l10n-brazil&target_branch=18.0
     :alt: Try me on Runboat
 
 |badge1| |badge2| |badge3| |badge4| |badge5|
@@ -32,10 +32,10 @@ Este módulo contém algumas abstrações utilizadas pelos módulos de SPED
 
 Ele não faz nada sozinho, mas serve dentro dos 4 módulos:
 
-- l10n_br_sped_ecd
-- l10n_br_sped_efd_icms_ipi
-- l10n_br_sped_efd_pis_cofins
-- l10n_br_sped_ecf
+-  l10n_br_sped_ecd
+-  l10n_br_sped_efd_icms_ipi
+-  l10n_br_sped_efd_pis_cofins
+-  l10n_br_sped_ecf
 
 Em especial, cada registro dos módulos de SPED herda do objeto abstrato
 l10n_br_sped.mixin que conta com visões automáticas e metodos para
@@ -57,40 +57,41 @@ quebrar o arquivo bloco por bloco.
 
 Em cada módulo de SPED, existe 2 arquivos principais:
 
-- um arquivo com o número do leiaute que contém **os modelos abstratos
-  de todos os registros do SPED com todos os campos**. Este arquivo é
-  gerido gerido pela ferramenta
-  `spedextractor <https://github.com/akretion/sped-extractor>`__ a
-  partir dos pdf das especificações e **não deve ser editado
-  manualmente**.
-- um segundo arquivo que contém a **lista de todos registros concretos**
-  que herdam desses primeiros modelos abstratos e contém assim todos os
-  campos. Como o mixin de cada registro contém a versão do leiaute
-  dentro do nome dele, temos uma forma de suportar várias versões dos
-  leiautes. Esse arquivo dos registros concretos deve sim ser editado
-  manualmente para completar os mappings. Para mapear um registro, deve
-  se implementar o override desses 3 métodos:
+-  um arquivo com o número do leiaute que contém **os modelos abstratos
+   de todos os registros do SPED com todos os campos**. Este arquivo é
+   gerido gerido pela ferramenta
+   `spedextractor <https://github.com/akretion/sped-extractor>`__ a
+   partir dos pdf das especificações e **não deve ser editado
+   manualmente**.
+-  um segundo arquivo que contém a **lista de todos registros
+   concretos** que herdam desses primeiros modelos abstratos e contém
+   assim todos os campos. Como o mixin de cada registro contém a versão
+   do leiaute dentro do nome dele, temos uma forma de suportar
+   várias versões dos leiautes. Esse arquivo dos registros concretos
+   deve sim ser editado manualmente para completar os mappings. Para
+   mapear um registro, deve se implementar o override desses 3 métodos:
 
-  - ``def _odoo_domain(self, parent_record, declaration):`` deve
-    retornar um domain que permite a seleção dos records Odoo a serem
-    mapeados de acordo com o record parente e os dados da declaração
-    (onde tem as datas e a empresa por exemplo). Para usar esse método
-    ``_odoo_domain``, deve se definir também o atributo ``_odoo_model``
-  - ``def _odoo_query(self, parent_record, declaration):`` caso a
-    seleção dos records a serem mapeados não pode ser obtida por um
-    domain, pode ser implementado esse override para retornar a query
-    SQL para selecionar um result set a mapear. Neste caso, o record do
-    método ``_map_from_odoo`` é um result set do query Postgres. Se você
-    não implementar nem ``_odoo_domain`` nem ``_odoo_query`` e
-    implementar o método ``_map_from_odoo``, o registro vai ter uma
-    instância gerida para cada declaração. É o caso do registro I010 da
-    ECD por exemplo.
-  - ``_map_from_odoo(self, record, parent_record, declaration, index=0)``
-    para facilitar, os overrides dos metodos ``_map_from_odoo`` de todos
-    os registros, esse já vem geridos de forma comentada com todos os
-    campos do registro. Assim basta descomentar or método e implementar
-    como é mapeado cada campo a partir do record, parent_record e dos
-    dados da declaração.
+   -  ``def _odoo_domain(self, parent_record, declaration):`` deve
+      retornar um domain que permite a seleção dos records Odoo a serem
+      mapeados de acordo com o record parente e os dados da declaração
+      (onde tem as datas e a empresa por exemplo). Para usar esse método
+      ``_odoo_domain``, deve se definir também o atributo
+      ``_odoo_model``
+   -  ``def _odoo_query(self, parent_record, declaration):`` caso a
+      seleção dos records a serem mapeados não pode ser obtida por um
+      domain, pode ser implementado esse override para retornar a query
+      SQL para selecionar um result set a mapear. Neste caso, o record
+      do método ``_map_from_odoo`` é um result set do query Postgres. Se
+      você não implementar nem ``_odoo_domain`` nem ``_odoo_query`` e
+      implementar o método ``_map_from_odoo``, o registro vai ter uma
+      instância gerida para cada declaração. É o caso do registro I010
+      da ECD por exemplo.
+   -  ``_map_from_odoo(self, record, parent_record, declaration, index=0)``
+      para facilitar, os overrides dos metodos ``_map_from_odoo`` de
+      todos os registros, esse já vem geridos de forma comentada com
+      todos os campos do registro. Assim basta descomentar or método e
+      implementar como é mapeado cada campo a partir do record,
+      parent_record e dos dados da declaração.
 
 .. IMPORTANT::
    This is an alpha version, the data model and design can change at any time without warning.
@@ -108,7 +109,7 @@ Bug Tracker
 Bugs are tracked on `GitHub Issues <https://github.com/OCA/l10n-brazil/issues>`_.
 In case of trouble, please check there if your issue has already been reported.
 If you spotted it first, help us to smash it by providing a detailed and welcomed
-`feedback <https://github.com/OCA/l10n-brazil/issues/new?body=module:%20l10n_br_sped_base%0Aversion:%2017.0%0A%0A**Steps%20to%20reproduce**%0A-%20...%0A%0A**Current%20behavior**%0A%0A**Expected%20behavior**>`_.
+`feedback <https://github.com/OCA/l10n-brazil/issues/new?body=module:%20l10n_br_sped_base%0Aversion:%2018.0%0A%0A**Steps%20to%20reproduce**%0A-%20...%0A%0A**Current%20behavior**%0A%0A**Expected%20behavior**>`_.
 
 Do not contact contributors directly about support or help with technical issues.
 
@@ -123,9 +124,9 @@ Authors
 Contributors
 ------------
 
-- `AKRETION <https://akretion.com/pt-BR/>`__:
+-  `AKRETION <https://akretion.com/pt-BR/>`__:
 
-  - Raphaël Valyi <raphael.valyi@akretion.com.br>
+   -  Raphaël Valyi <raphael.valyi@akretion.com.br>
 
 Maintainers
 -----------
@@ -148,6 +149,6 @@ Current `maintainer <https://odoo-community.org/page/maintainer-role>`__:
 
 |maintainer-rvalyi| 
 
-This module is part of the `OCA/l10n-brazil <https://github.com/OCA/l10n-brazil/tree/17.0/l10n_br_sped_base>`_ project on GitHub.
+This module is part of the `OCA/l10n-brazil <https://github.com/OCA/l10n-brazil/tree/18.0/l10n_br_sped_base>`_ project on GitHub.
 
 You are welcome to contribute. To learn how please visit https://odoo-community.org/page/Contribute.
