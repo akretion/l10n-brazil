@@ -4,7 +4,7 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Odoo Server 16.0\n"
+"Project-Id-Version: Odoo Server 18.0\n"
 "Report-Msgid-Bugs-To: \n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -73,15 +73,11 @@ msgstr ""
 
 #. module: l10n_br_sped_base
 #: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_declaration__state__done
-#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_ecd_0000__state__done
-#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_ecd_9_0000__state__done
 msgid "Done"
 msgstr ""
 
 #. module: l10n_br_sped_base
 #: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_declaration__state__draft
-#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_ecd_0000__state__draft
-#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_ecd_9_0000__state__draft
 msgid "Draft"
 msgstr ""
 
@@ -202,11 +198,6 @@ msgid "Is accountant?"
 msgstr ""
 
 #. module: l10n_br_sped_base
-#: model:ir.model.fields,field_description:l10n_br_sped_base.field_l10n_br_sped_declaration__message_main_attachment_id
-msgid "Main Attachment"
-msgstr ""
-
-#. module: l10n_br_sped_base
 #: model:ir.model.fields,field_description:l10n_br_sped_base.field_l10n_br_sped_declaration__message_has_error
 msgid "Message Delivery error"
 msgstr ""
@@ -288,7 +279,6 @@ msgstr ""
 #. module: l10n_br_sped_base
 #. odoo-python
 #: code:addons/l10n_br_sped_base/models/sped_mixin.py:0
-#, python-format
 msgid "Register %(code)s doesn't match Odoo %(kind)s SPED structure!"
 msgstr ""
 
@@ -346,7 +336,6 @@ msgstr ""
 #. module: l10n_br_sped_base
 #. odoo-python
 #: code:addons/l10n_br_sped_base/models/sped_mixin.py:0
-#, python-format
 msgid "Undefined mapping model for Register %(name)s and model %(model)s"
 msgstr ""
 
