@@ -150,7 +150,12 @@ class Company(models.Model):
             return super().write(values)
         except UserError as e:
             brl_currency = self.env.ref("base.BRL", raise_if_not_found=False)
-            if not brl_currency or values.get("currency_id") != brl_currency.id:
+            usd_currency = self.env.ref("base.USD", raise_if_not_found=False)
+            if (
+                not brl_currency
+                or not usd_currency
+                or values.get("currency_id") not in (brl_currency.id, usd_currency.id)
+            ):
                 raise e
 
             demo_refs = [
