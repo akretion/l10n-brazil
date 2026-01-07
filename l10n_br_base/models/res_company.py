@@ -144,25 +144,31 @@ class Company(models.Model):
     def write(self, values):
         """
         Overriden so we can change the currency_id of base.main_company
-        in l10n_br_base/demo/res_company_demo.xml (demo data)
+        and specific demo companies even if constraints would normally prevent it.
         """
         try:
-            result = super().write(values)
+            return super().write(values)
         except UserError as e:
-            demo_main_company = self.env.ref(
-                "base.main_company", raise_if_not_found=False
-            )
-            brl_currency = self.env.ref("base.BRL")
-            if (
-                demo_main_company
-                and self.ids == [demo_main_company.id]
-                and values.get("currency_id") == brl_currency.id
-            ):
-                result = models.Model.write(self, values)
-            else:
+            brl_currency = self.env.ref("base.BRL", raise_if_not_found=False)
+            if not brl_currency or values.get("currency_id") != brl_currency.id:
                 raise e
 
-        return result
+            demo_refs = [
+                "base.main_company",
+                "l10n_br_base.empresa_simples_nacional",
+                "l10n_br_base.empresa_lucro_presumido",
+            ]
+
+            allowed_companies = self.env["res.company"]
+            for ref in demo_refs:
+                company = self.env.ref(ref, raise_if_not_found=False)
+                if company:
+                    allowed_companies |= company
+
+            if allowed_companies and not (self - allowed_companies):
+                return super(models.Model, self).write(values)
+
+            raise e
 
     @api.onchange("state_id")
     def _onchange_state_id(self):
