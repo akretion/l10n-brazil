@@ -9,6 +9,8 @@ from odoo.exceptions import UserError
 from odoo.tests import TransactionCase
 from odoo.tests.common import Form, tagged
 
+from odoo.addons.l10n_br_fiscal.constants.fiscal import DOCUMENT_STATE_DRAFT
+
 _logger = logging.getLogger(__name__)
 
 
@@ -257,7 +259,7 @@ class TestMoveEdition(TransactionCase):
         move = move_form.save()
 
         self.assertEqual(move.state, "draft")
-        self.assertEqual(move.state_edoc, "em_digitacao")
+        self.assertEqual(move.state_edoc, DOCUMENT_STATE_DRAFT)
         self.assertEqual(move.fiscal_document_id.document_serie, "1")
         self.assertTrue(move.fiscal_document_id)
         self.assertEqual(len(move.fiscal_document_ids), 1)
@@ -386,7 +388,7 @@ class TestMoveEdition(TransactionCase):
         move = move_form.save()
 
         self.assertEqual(move.state, "draft")
-        self.assertEqual(move.state_edoc, "em_digitacao")
+        self.assertEqual(move.state_edoc, DOCUMENT_STATE_DRAFT)
         self.assertEqual(move.fiscal_document_id.document_serie, "1")
         self.assertTrue(move.fiscal_document_id)
         self.assertEqual(len(move.fiscal_document_ids), 1)
