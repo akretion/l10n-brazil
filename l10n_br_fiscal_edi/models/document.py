@@ -284,6 +284,7 @@ class Document(models.Model):
                         DOCUMENT_STATE_AUTHORIZED,
                         DOCUMENT_STATE_OPEN,  # Allow canceling if manual/not sent
                         DOCUMENT_STATE_REJECTED,
+                        DOCUMENT_STATE_DRAFT,
                     ],
                     "dest": DOCUMENT_STATE_CANCEL,
                     "before": "_before_document_cancel",
