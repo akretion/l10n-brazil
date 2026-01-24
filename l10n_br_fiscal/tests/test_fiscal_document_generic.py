@@ -150,7 +150,7 @@ class TestFiscalDocumentGeneric(TransactionCase):
             product_total = line.price_unit * line.quantity
             self.assertEqual(line.price_gross, product_total)
 
-        self.nfe_same_state.action_document_confirm()
+        self.nfe_same_state.button_open()
 
         # Total value of the products
         self.assertEqual(self.nfe_same_state.amount_price_gross, 200)
