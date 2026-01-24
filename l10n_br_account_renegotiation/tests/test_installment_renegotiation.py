@@ -54,6 +54,7 @@ class TestInstallmentRenegotiation(TransactionCase):
         )
 
         # Create a payment term with 3 installments
+        # In Odoo 16, payment term lines use 'days' (not 'nb_days')
         cls.payment_term = cls.env["account.payment.term"].create(
             {
                 "name": "3 Installments Test",
@@ -64,7 +65,7 @@ class TestInstallmentRenegotiation(TransactionCase):
                         {
                             "value": "percent",
                             "value_amount": 33.33,
-                            "nb_days": 30,
+                            "days": 30,
                         },
                     ),
                     (
@@ -73,7 +74,7 @@ class TestInstallmentRenegotiation(TransactionCase):
                         {
                             "value": "percent",
                             "value_amount": 33.33,
-                            "nb_days": 60,
+                            "days": 60,
                         },
                     ),
                     (
@@ -81,7 +82,7 @@ class TestInstallmentRenegotiation(TransactionCase):
                         0,
                         {
                             "value": "balance",
-                            "nb_days": 90,
+                            "days": 90,
                         },
                     ),
                 ],

@@ -235,7 +235,10 @@ class InstallmentRenegotiationWizard(models.TransientModel):
             and l.id not in lines_to_keep
         )
         if lines_to_delete:
-            lines_to_delete.with_context(**ctx, dynamic_unlink=True).sudo().unlink()
+            # Use force_delete=True to bypass the posted entry deletion constraint
+            lines_to_delete.with_context(
+                **ctx, dynamic_unlink=True, force_delete=True
+            ).sudo().unlink()
 
         # Create new lines if needed
         if lines_to_create:
@@ -252,7 +255,6 @@ class InstallmentRenegotiationWizard(models.TransientModel):
                         "credit": vals["credit"],
                         "currency_id": move.currency_id.id,
                         "partner_id": move.partner_id.id,
-                        "exclude_from_invoice_tab": True,
                     }
                 )
 
