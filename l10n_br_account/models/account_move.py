@@ -14,11 +14,11 @@ from odoo.tools import frozendict
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     DOCUMENT_ISSUER_COMPANY,
     DOCUMENT_ISSUER_PARTNER,
+    DOCUMENT_STATE_CANCEL,
+    DOCUMENT_STATE_DRAFT,
     FISCAL_IN_OUT_ALL,
     FISCAL_OUT,
     MODELO_FISCAL_NFE,
-    SITUACAO_EDOC_CANCELADA,
-    SITUACAO_EDOC_EM_DIGITACAO,
 )
 
 from .constants import (
@@ -422,7 +422,7 @@ class AccountMove(models.Model):
 
     def button_draft(self):
         for move in self.filtered(lambda d: d.document_type_id):
-            if move.state_edoc == SITUACAO_EDOC_CANCELADA:
+            if move.state_edoc == DOCUMENT_STATE_CANCEL:
                 if move.issuer == DOCUMENT_ISSUER_COMPANY:
                     raise UserError(
                         _(
@@ -431,13 +431,14 @@ class AccountMove(models.Model):
                         ).format(move.document_number)
                     )
             move.fiscal_document_ids.filtered(
-                lambda d: d.state_edoc != SITUACAO_EDOC_EM_DIGITACAO
-            ).action_document_back2draft()
+                lambda d: d.state_edoc != DOCUMENT_STATE_DRAFT
+            ).button_draft()
         return super().button_draft()
 
     def action_document_send(self):
         for invoice in self.filtered(lambda d: d.document_type_id):
-            invoice.fiscal_document_ids.action_document_send()
+            if hasattr(invoice.fiscal_document_ids, "button_send"):
+                invoice.fiscal_document_ids.button_send()
             # FIXME: na migração para a v14 foi permitido o post antes do envio
             #  para destravar a migração, mas poderia ser cogitado de obrigar a
             #  transmissão antes do post novamente como na v12.
@@ -447,7 +448,7 @@ class AccountMove(models.Model):
     def action_document_cancel(self):
         for move in self.filtered(lambda d: d.document_type_id):
             move.ensure_one_doc()
-            return move.fiscal_document_id.action_document_cancel()
+            return move.fiscal_document_id.button_cancel()
 
     def action_document_correction(self):
         for move in self.filtered(lambda d: d.document_type_id):
@@ -475,16 +476,16 @@ class AccountMove(models.Model):
         for move in self.with_context(skip_post=True):
             move.fiscal_document_ids.filtered(
                 lambda d: d.document_type_id
-            ).action_document_confirm()
+            ).button_open()
         return super()._post(soft=soft)
 
     def view_xml(self):
         self.ensure_one_doc()
-        return self.fiscal_document_id.view_xml()
+        return self.fiscal_document_id.button_view_xml()
 
     def view_pdf(self):
         self.ensure_one_doc()
-        return self.fiscal_document_id.view_pdf()
+        return self.fiscal_document_id.button_view_pdf()
 
     def action_send_email(self):
         self.ensure_one_doc()
