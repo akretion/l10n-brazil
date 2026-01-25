@@ -464,6 +464,10 @@ class Document(models.Model):
 
         return action
 
+    def _document_export(self, **kwargs):
+        """Placeholder for modules to implement their own export logic."""
+        pass
+
     # the following actions are meant to be implemented in other modules such as
     # l10n_br_fiscal_edi. They are defined here so they can be overriden in modules
     # that don't depend on l10n_br_fiscal_edi (such as l10n_br_account).
