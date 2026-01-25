@@ -33,15 +33,15 @@ class TestCTeSerialize(TransactionCase):
         Performs actions necessary to prepare an CTe of the demo data to
         perform the tests
         """
-        if cte.state != "em_digitacao":  # 2nd test run
-            cte.action_document_back2draft()
+        if cte.state != "draft":  # 2nd test run
+            cte.button_draft()
 
         cte.fiscal_line_ids.name = "Frete"
         for line in cte.fiscal_line_ids:
             line.price_unit = 100
         cte.fiscal_line_ids.cfop_id = cte.env.ref("l10n_br_fiscal.cfop_5352")
 
-        cte.action_document_confirm()
+        cte.button_open()
         cte.document_date = datetime.strptime(
             "2020-01-01T11:00:00", "%Y-%m-%dT%H:%M:%S"
         )

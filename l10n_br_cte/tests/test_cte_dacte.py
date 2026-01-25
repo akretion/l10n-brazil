@@ -8,7 +8,7 @@ from odoo.tests.common import TransactionCase
 class TestDacteGeneration(TransactionCase):
     def test_generate_dacte_brazil_fiscal_report(self):
         cte = self.env.ref("l10n_br_cte.demo_cte_lc_modal_rodoviario")
-        cte.action_document_confirm()
+        cte.button_open()
         cte.view_pdf()
         self.assertTrue(cte.file_report_id)
 
@@ -18,7 +18,7 @@ class TestDacteGeneration(TransactionCase):
         )
         cte = self.env.ref("l10n_br_cte.demo_cte_lc_modal_rodoviario")
         cte.document_type_id = self.env.ref("l10n_br_fiscal.document_01")
-        cte.action_document_confirm()
+        cte.button_open()
         with self.assertRaises(UserError) as captured_exception:
             dacte_report._render_qweb_pdf("main_template_dacte", [cte.id])
         self.assertEqual(
@@ -28,7 +28,7 @@ class TestDacteGeneration(TransactionCase):
 
     def test_generate_dacte_brazil_fiscal_report_partner(self):
         cte = self.env.ref("l10n_br_cte.demo_cte_lc_modal_rodoviario")
-        cte.action_document_confirm()
+        cte.button_open()
         cte.issuer = "partner"
         cte.view_pdf()
         self.assertTrue(cte.file_report_id)
