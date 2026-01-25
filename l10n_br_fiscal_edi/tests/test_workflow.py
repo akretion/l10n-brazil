@@ -11,7 +11,6 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import (
 from odoo.addons.l10n_br_fiscal_edi.constants.fiscal import (
     DOCUMENT_STATE_AUTHORIZED,
     DOCUMENT_STATE_REJECTED,
-    DOCUMENT_STATE_SENDING,
 )
 
 
