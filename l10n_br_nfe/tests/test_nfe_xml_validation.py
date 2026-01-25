@@ -3,7 +3,9 @@ import logging
 from odoo.tests.common import TransactionCase
 from odoo.tools import float_compare
 
-from odoo.addons.l10n_br_fiscal.constants.fiscal import SITUACAO_EDOC_A_ENVIAR
+from odoo.addons.l10n_br_fiscal_edi.constants.fiscal import (
+    DOCUMENT_STATE_SENDING as SITUACAO_EDOC_ENVIADA,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -37,13 +39,13 @@ class TestXMLValidation(TransactionCase):
                 "product_id": self.env.ref("product.product_product_4c").id,
             }
         )
-        document.action_document_confirm()
+        document.button_open()
         document.action_document_send()
         _logger.info(
             f"(Test Result) XML Validation Message: {document.xml_error_message}"
         )
         self.assertTrue("CEP" in document.xml_error_message)
-        self.assertEqual(document.state_edoc, SITUACAO_EDOC_A_ENVIAR)
+        self.assertEqual(document.state_edoc, SITUACAO_EDOC_ENVIADA)
 
     def test_xml_nfe_taxes(self):
         """This method tests multiple tax fields for NFe lines and NFe totals.
@@ -127,7 +129,7 @@ class TestXMLValidation(TransactionCase):
             }
         )
 
-        document.action_document_confirm()
+        document.button_open()
         document.action_document_send()
         # This section probably indicates an error in eiter
         #   l10n_br_account or l10n_br_fiscal

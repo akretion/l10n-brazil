@@ -8,7 +8,7 @@ from odoo.tests.common import TransactionCase
 class TestDanfeGeneration(TransactionCase):
     def test_generate_danfe_brazil_fiscal_report(self):
         nfe = self.env.ref("l10n_br_nfe.demo_nfe_natural_icms_18_red_51_11")
-        nfe.action_document_confirm()
+        nfe.button_open()
         nfe.view_pdf()
         self.assertTrue(nfe.file_report_id)
 
@@ -18,7 +18,7 @@ class TestDanfeGeneration(TransactionCase):
         )
         nfe = self.env.ref("l10n_br_nfe.demo_nfe_natural_icms_18_red_51_11")
         nfe.document_type_id = self.env.ref("l10n_br_fiscal.document_01")
-        nfe.action_document_confirm()
+        nfe.button_open()
         with self.assertRaises(UserError) as captured_exception:
             danfe_report._render_qweb_pdf("main_template_danfe", [nfe.id])
         self.assertEqual(
@@ -28,7 +28,7 @@ class TestDanfeGeneration(TransactionCase):
 
     def test_generate_danfe_brazil_fiscal_report_partner(self):
         nfe = self.env.ref("l10n_br_nfe.demo_nfe_natural_icms_18_red_51_11")
-        nfe.action_document_confirm()
+        nfe.button_open()
         nfe.issuer = "partner"
         nfe.view_pdf()
         self.assertTrue(nfe.file_report_id)

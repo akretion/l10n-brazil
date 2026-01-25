@@ -33,8 +33,8 @@ class TestNFeExport(TransactionCase):
         Performs actions necessary to prepare an NFe of the demo data to
         perform the tests
         """
-        if nfe.state != "em_digitacao":  # 2nd test run
-            nfe.action_document_back2draft()
+        if nfe.state != "draft":  # 2nd test run
+            nfe.button_draft()
 
         nfe._register_hook()  # required in v16 for next statement
         nfe.nfe40_detPag = [
@@ -47,7 +47,7 @@ class TestNFeExport(TransactionCase):
                 },
             ),
         ]
-        nfe.action_document_confirm()
+        nfe.button_open()
         nfe.nfe40_cNF = "06277716"
         nfe.company_id.country_id.name = "Brasil"
         nfe.with_context(force_product_lang="en_US")._document_export()
