@@ -191,4 +191,4 @@ class MDFeStructure(TransactionCase):
         mdfe = self.env.ref("l10n_br_mdfe.demo_mdfe_sn_modal_aquaviario")
         mdfe.mdfe30_prodPred = self.env.ref("product.product_product_9")
         with self.assertRaises(UserError):
-            mdfe.action_document_confirm()
+            mdfe.button_open()
