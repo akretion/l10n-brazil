@@ -540,25 +540,25 @@ class Document(models.Model):
     # Actions / Buttons
     # -------------------------------------------------------------------------
 
-    def button_open(self):
+    def action_document_confirm(self):
         """Override base button to trigger FSM validation"""
         if self.document_electronic and self.issuer == DOCUMENT_ISSUER_COMPANY:
             return self._trigger_fsm("action_validate")
         else:
-            return super().button_open()
+            return super().action_document_confirm()
 
-    def button_send(self):
+    def action_document_send(self):
         """Trigger Sending"""
         return self._trigger_fsm("action_send")
 
-    def button_draft(self):
+    def action_document_back2draft(self):
         """Override base button"""
         if self.document_electronic and self.issuer == DOCUMENT_ISSUER_COMPANY:
             return self._trigger_fsm("action_draft_fsm")
         else:
-            return super().button_draft()
+            return super().action_document_back2draft()
 
-    def button_cancel(self):
+    def action_document_cancel(self):
         """Override base button"""
         if self.document_electronic and self.issuer == DOCUMENT_ISSUER_COMPANY:
             # For authorized docs, show wizard
@@ -569,7 +569,7 @@ class Document(models.Model):
             # Otherwise trigger FSM cancel
             return self._trigger_fsm("action_cancel_fsm")
         else:
-            return super().button_cancel()
+            return super().action_document_cancel()
 
     # -------------------------------------------------------------------------
     # Misc Tools
@@ -583,9 +583,8 @@ class Document(models.Model):
                 "target": "new",
             }
 
-    def button_view_xml(self):
+    def view_xml(self):
         self.ensure_one()
-        # super().view_xml() # Base removed it
         xml_file = self.authorization_file_id or self.send_file_id
         if not xml_file:
             self._document_export()
@@ -597,21 +596,10 @@ class Document(models.Model):
     def make_pdf(self):
         pass
 
-    def button_view_pdf(self):
+    def view_pdf(self):
         self.ensure_one()
-        # super().view_pdf() # Base removed it
         if not self.file_report_id or not self.authorization_file_id:
             self.make_pdf()
         if not self.file_report_id:
             raise UserError(_("No PDF file generated!"))
         return self._target_new_tab(self.file_report_id)
-
-    def view_pdf(self):
-        return self.button_view_pdf()
-
-    # Legacy method support (if external modules call them)
-    def action_document_send(self):
-        self.button_send()
-
-    def action_document_cancel(self):
-        return self.button_cancel()

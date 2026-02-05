@@ -48,9 +48,9 @@
         <field name="priority">5</field>
         <field name="inherit_id" ref="l10n_br_fiscal.document_form" />
         <field name="arch" type="xml">
-            <button name="button_open" position="after">
+            <button name="action_document_confirm" position="after">
                 <button
-                    name="button_send"
+                    name="action_document_send"
                     type="object"
                     string="Send"
                     groups="l10n_br_fiscal.group_user"
@@ -58,9 +58,9 @@
                     attrs="{'invisible': [('state_edoc','!=','open')]}"
                 />
             </button>
-            <button name="button_draft" position="before">
+            <button name="action_document_back2draft" position="before">
                 <button
-                    name="button_view_pdf"
+                    name="view_pdf"
                     type="object"
                     string="View PDF"
                     groups="l10n_br_fiscal.group_user"
@@ -68,7 +68,7 @@
                     attrs="{'invisible': [('state_edoc', 'in', ('draft', 'open'))]}"
                 />
                 <button
-                    name="button_view_xml"
+                    name="view_xml"
                     type="object"
                     string="View XML"
                     groups="l10n_br_fiscal.group_user"

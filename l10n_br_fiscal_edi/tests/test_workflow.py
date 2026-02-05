@@ -32,22 +32,22 @@ class TestWorkflow(TransactionCase):
         self.fiscal_document.document_electronic = False
         self.assertEqual(self.fiscal_document.state_edoc, DOCUMENT_STATE_DRAFT)
 
-        self.fiscal_document.button_open()
+        self.fiscal_document.action_document_confirm()
         self.assertEqual(self.fiscal_document.state_edoc, DOCUMENT_STATE_OPEN)
 
         # For non-electronic, send should move to authorized (simulated completion)
         # Assuming the logic in _document_send_logic handles this
-        self.fiscal_document.button_send()
+        self.fiscal_document.action_document_send()
         self.assertEqual(self.fiscal_document.state_edoc, DOCUMENT_STATE_AUTHORIZED)
 
     def test_electronic_01_confirm(self):
         self.fiscal_document.document_electronic = True
         self.assertEqual(self.fiscal_document.state_edoc, DOCUMENT_STATE_DRAFT)
 
-        self.fiscal_document.button_open()
+        self.fiscal_document.action_document_confirm()
         self.assertEqual(self.fiscal_document.state_edoc, DOCUMENT_STATE_OPEN)
 
-        self.fiscal_document.button_send()
+        self.fiscal_document.action_document_send()
         # With "No Processor", it simulates immediate authorization
         self.assertEqual(self.fiscal_document.state_edoc, DOCUMENT_STATE_AUTHORIZED)
 
@@ -55,36 +55,36 @@ class TestWorkflow(TransactionCase):
         self.fiscal_document.document_electronic = True
         self.assertEqual(self.fiscal_document.state_edoc, DOCUMENT_STATE_DRAFT)
 
-        self.fiscal_document.button_open()
+        self.fiscal_document.action_document_confirm()
 
         # Simulate rejection
         self.fiscal_document.state_edoc = DOCUMENT_STATE_REJECTED
         self.assertEqual(self.fiscal_document.state_edoc, DOCUMENT_STATE_REJECTED)
 
         # Retry send
-        self.fiscal_document.button_send()
+        self.fiscal_document.action_document_send()
         self.assertEqual(self.fiscal_document.state_edoc, DOCUMENT_STATE_AUTHORIZED)
 
     def test_no_electronic_01_draft_cancel(self):
         self.fiscal_document.document_electronic = False
         self.assertEqual(self.fiscal_document.state_edoc, DOCUMENT_STATE_DRAFT)
 
-        self.fiscal_document.button_cancel()
+        self.fiscal_document.action_document_cancel()
         self.assertEqual(self.fiscal_document.state_edoc, DOCUMENT_STATE_CANCEL)
 
     def test_electronic_01_draft_cancel(self):
         self.fiscal_document.document_electronic = True
         self.assertEqual(self.fiscal_document.state_edoc, DOCUMENT_STATE_DRAFT)
 
-        self.fiscal_document.button_cancel()
+        self.fiscal_document.action_document_cancel()
         self.assertEqual(self.fiscal_document.state_edoc, DOCUMENT_STATE_CANCEL)
 
     def test_electronic_01_back2draft(self):
         self.fiscal_document.document_electronic = True
         self.assertEqual(self.fiscal_document.state_edoc, DOCUMENT_STATE_DRAFT)
 
-        self.fiscal_document.button_open()
+        self.fiscal_document.action_document_confirm()
         self.assertEqual(self.fiscal_document.state_edoc, DOCUMENT_STATE_OPEN)
 
-        self.fiscal_document.button_draft()
+        self.fiscal_document.action_document_back2draft()
         self.assertEqual(self.fiscal_document.state_edoc, DOCUMENT_STATE_DRAFT)
