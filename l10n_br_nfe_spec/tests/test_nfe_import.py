@@ -13,9 +13,8 @@ from odoo_test_helper import FakeModelLoader
 from odoo import Command, api, models
 from odoo.tests import TransactionCase
 
-from odoo.addons.l10n_br_nfe_spec.models.v4_0 import leiaute_nfe_v4_00
-
 from ..models import spec_mixin
+from ..models.v4_0 import leiaute_nfe_v4_00
 
 tz_datetime = re.compile(r".*[-+]0[0-9]:00$")
 
@@ -112,13 +111,12 @@ spec_mixin.NfeSpecMixin.build_attrs_fake = build_attrs_fake
 spec_mixin.NfeSpecMixin.match_or_create_m2o_fake = match_or_create_m2o_fake
 
 
-class NFeImportTest(TransactionCase, FakeModelLoader):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.env = cls.env(context=dict(cls.env.context, tracking_disable=True))
-        cls.loader = FakeModelLoader(cls.env, cls.__module__)
-        cls.loader.backup_registry()
+class NFeImportTest(TransactionCase):
+    def setUp(self):
+        super().setUp()
+        self.env = self.env(context=dict(self.env.context, tracking_disable=True))
+        self.loader = FakeModelLoader(self.env, self.__module__)
+        self.loader.backup_registry()
 
         # Get all classes from the module that inherit from AbstractModel
         modified_classes = []
@@ -132,12 +130,8 @@ class NFeImportTest(TransactionCase, FakeModelLoader):
 
                 # Replace original class in module
                 modified_classes.append(modified_class)
-                cls.loader.update_registry(modified_classes)
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.loader.restore_registry()
-        super().tearDownClass()
+                self.loader.update_registry(modified_classes)
+                self.addCleanup(self.loader.restore_registry)
 
     def test_import_nfe1(self):
         file = (
