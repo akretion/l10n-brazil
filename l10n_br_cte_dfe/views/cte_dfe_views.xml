@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="action_cte_dfe_document" model="ir.actions.act_window">
+        <field name="name">CT-e de Terceiros</field>
+        <field name="res_model">l10n_br_fiscal_dfe.document</field>
+        <field name="view_mode">tree,form</field>
+        <field name="domain">[('fiscal_type', '=', 'cte')]</field>
+        <field name="context">{'default_fiscal_type': 'cte'}</field>
+    </record>
+
+    <menuitem
+        id="menu_l10n_br_cte_dfe_document"
+        name="CT-e de Terceiros"
+        action="action_cte_dfe_document"
+        parent="l10n_br_fiscal_dfe.menu_l10n_br_fiscal_dfe_root"
+        sequence="20"
+    />
+</odoo>

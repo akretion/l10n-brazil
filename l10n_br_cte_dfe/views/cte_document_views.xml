@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!--record id="view_l10n_br_fiscal_dfe_document_form_cte" model="ir.ui.view">
+        <field name="name">l10n_br_fiscal_dfe.document.form.cte</field>
+        <field name="model">l10n_br_fiscal_dfe.document</field>
+        <field name="inherit_id" ref="l10n_br_fiscal_dfe.view_l10n_br_fiscal_dfe_document_form"/>
+        <field name="arch" type="xml">
+        </field>
+    </record-->
+</odoo>
