@@ -1,6 +1,6 @@
-===============
-Monitor de NF-e
-===============
+======================
+Monitor de DF-e (Base)
+======================
 
 .. 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -274,10 +274,13 @@ promote its widespread use.
 .. |maintainer-antoniospneto| image:: https://github.com/antoniospneto.png?size=40px
     :target: https://github.com/antoniospneto
     :alt: antoniospneto
+.. |maintainer-rvalyi| image:: https://github.com/rvalyi.png?size=40px
+    :target: https://github.com/rvalyi
+    :alt: rvalyi
 
 Current `maintainers <https://odoo-community.org/page/maintainer-role>`__:
 
-|maintainer-felipemotter| |maintainer-antoniospneto| 
+|maintainer-felipemotter| |maintainer-antoniospneto| |maintainer-rvalyi| 
 
 This module is part of the `OCA/l10n-brazil <https://github.com/OCA/l10n-brazil/tree/16.0/l10n_br_fiscal_dfe>`_ project on GitHub.
 
