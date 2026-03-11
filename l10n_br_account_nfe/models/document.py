@@ -152,7 +152,7 @@ class DocumentNfe(models.Model):
     def _check_fiscal_payment_mode(self):
         for rec in self:
             if (
-                rec.state_edoc == "em_digitacao"
+                rec.state_edoc in ("em_digitacao", "draft")
                 or not rec._need_compute_nfe_tags()
                 or rec._is_without_payment()
             ):
