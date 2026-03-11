@@ -2180,3 +2180,22 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
         self.assertEqual(document_id.state, "denied")
         # Check if moves are cancelled
         self.assertEqual(document_id.move_ids.state, "cancel")
+
+    def test_in_invoice_confirm_from_fiscal_document(self):
+        """Confirming in-invoice from fiscal doc view must not recurse with error."""
+        edi_module = self.env.ref(
+            "base.module_l10n_br_fiscal_edi", raise_if_not_found=False
+        )
+        if not edi_module or edi_module.state != "installed":
+            return True
+
+        move = self.move_in_compra_para_revenda
+        document_id = move.fiscal_document_id
+
+        self.assertEqual(move.state, "draft")
+        self.assertEqual(document_id.state_edoc, DOCUMENT_STATE_DRAFT)
+        self.assertEqual(document_id.issuer, "partner")
+
+        document_id.action_document_confirm()
+
+        self.assertEqual(move.state, "posted")
