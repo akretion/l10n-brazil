@@ -306,7 +306,6 @@ class Document(models.Model):
                 },
             ],
             "initial": self.state_edoc,
-            "after_state_change": "_after_fsm_state_change",
         }
 
     def _trigger_fsm(self, trigger):
@@ -319,9 +318,8 @@ class Document(models.Model):
                     states=config["states"],
                     transitions=config["transitions"],
                     initial=config["initial"],
-                    after_state_change=config["after_state_change"],
                     model_attribute="state_edoc",  # Bind to state_edoc
-                    ignore_invalid_triggers=True,
+                    ignore_invalid_triggers=False,
                 )
                 getattr(wrapper, trigger)()
             except MachineError as e:
@@ -329,18 +327,6 @@ class Document(models.Model):
                     _("State transition failed for action '%(action)s': %(error)s")
                     % {"action": trigger, "error": e}
                 ) from e
-
-    def _after_fsm_state_change(self):
-        # Persist the state change to the database immediately
-        # transitions library updates the attribute on the object, but we need
-        # to save it. However, calling self.state_edoc = ... inside might be
-        # redundant if we just write.
-        # Actually, 'transitions' modifies the instance attribute. We need to
-        # flush it. But since we are in a loop in _trigger_fsm, we can just write.
-        # Let's trust that 'transitions' updates 'state_edoc' on 'self'.
-        # We need to explicitly write it to DB.
-        # With Wrapper, writing happens in setter! So this might be redundant.
-        pass
 
     def _document_cancel(self, justificative=None):
         if justificative:
@@ -541,11 +527,25 @@ class Document(models.Model):
     # -------------------------------------------------------------------------
 
     def action_document_confirm(self):
-        """Override base button to trigger FSM validation"""
-        if self.document_electronic and self.issuer == DOCUMENT_ISSUER_COMPANY:
-            return self._trigger_fsm("action_validate")
-        else:
-            return super().action_document_confirm()
+        """Override base button to trigger FSM validation.
+
+        This method must be idempotent because account.move._post() may call it
+        again for already confirmed documents.
+        """
+        electronic_company = self.filtered(
+            lambda d: d.document_electronic and d.issuer == DOCUMENT_ISSUER_COMPANY
+        )
+        to_validate = electronic_company.filtered(
+            lambda d: d.state_edoc == DOCUMENT_STATE_DRAFT
+        )
+        if to_validate:
+            to_validate._trigger_fsm("action_validate")
+
+        others = self - electronic_company
+        if others:
+            return super(Document, others).action_document_confirm()
+
+        return True
 
     def action_document_send(self):
         """Trigger Sending"""

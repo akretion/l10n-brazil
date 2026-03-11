@@ -2,6 +2,7 @@
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
 from odoo.tests import TransactionCase
+from odoo.exceptions import UserError
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     DOCUMENT_STATE_CANCEL,
@@ -47,6 +48,10 @@ class TestWorkflow(TransactionCase):
         self.fiscal_document.action_document_confirm()
         self.assertEqual(self.fiscal_document.state_edoc, DOCUMENT_STATE_OPEN)
 
+        # Reconfirm should be idempotent (no invalid transition error).
+        self.fiscal_document.action_document_confirm()
+        self.assertEqual(self.fiscal_document.state_edoc, DOCUMENT_STATE_OPEN)
+
         self.fiscal_document.action_document_send()
         # With "No Processor", it simulates immediate authorization
         self.assertEqual(self.fiscal_document.state_edoc, DOCUMENT_STATE_AUTHORIZED)
@@ -88,3 +93,10 @@ class TestWorkflow(TransactionCase):
 
         self.fiscal_document.action_document_back2draft()
         self.assertEqual(self.fiscal_document.state_edoc, DOCUMENT_STATE_DRAFT)
+
+    def test_invalid_transition_raises_user_error(self):
+        self.fiscal_document.document_electronic = True
+        self.assertEqual(self.fiscal_document.state_edoc, DOCUMENT_STATE_DRAFT)
+
+        with self.assertRaises(UserError):
+            self.fiscal_document.action_document_send()
