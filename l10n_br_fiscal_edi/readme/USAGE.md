@@ -1,32 +1,69 @@
-O fluxo de trabalho operacional para emissão e gerenciamento de documentos fiscais eletrônicos segue as etapas abaixo:
+O fluxo operacional para emissão e gerenciamento de documentos fiscais
+(eletrônicos e não eletrônicos) segue as etapas abaixo.
 
-1. Validação (Rascunho -> Em Aberto)
-------------------------------------
-*   O documento inicia no estado **Rascunho** (`Draft`).
-*   Ao clicar no botão **Confirmar**, o sistema executa validações de integridade (campos obrigatórios, regras de negócio básicas) e atribui a numeração sequencial (se configurado).
-*   O estado muda para **Em Aberto** (`Open`), indicando que o documento está pronto para transmissão.
+1. Validação (`draft` -> `open`)
+--------------------------------
 
-2. Transmissão (Em Aberto -> Enviando -> Resultado)
----------------------------------------------------
-*   No estado **Em Aberto**, o botão **Enviar** fica disponível.
-*   Ao acionar o envio, o documento passa para o estado transitório **Enviando** (`Sending`). Neste momento, o sistema se comunica com o webservice do fisco.
-*   **Autorização:** Se o fisco validar e autorizar o documento, o estado muda para **Autorizado** (`Authorized`). O protocolo de autorização e o XML final são gravados.
-*   **Rejeição:** Se houver erros de validação no fisco, o estado muda para **Rejeitado** (`Rejected`). As mensagens de erro retornadas pela SEFAZ são exibidas no painel do documento.
-    *   *Ação:* O usuário pode corrigir os dados no próprio documento e clicar em **Enviar** novamente para tentar uma nova transmissão.
-*   **Denegação:** Se houver irregularidade fiscal (emitente ou destinatário), o estado muda para **Denegado** (`Denied`). Este é um estado final; o número não pode ser reutilizado ou corrigido.
+* O documento inicia no estado **Rascunho** (`draft`).
+* Ao clicar no botão **Confirmar**, o sistema executa validações de
+  integridade, define data, comentário, numeração/sequência (quando aplicável)
+  e demais preparações do documento.
+* O estado muda para **Em Aberto** (`open`), indicando que o documento está
+  apto para o próximo passo.
 
-3. Cancelamento
----------------
-*   Documentos **Autorizados** podem ser cancelados, desde que dentro do prazo legal e atendendo às regras da UF.
-*   Clique no botão **Cancelar** para abrir o assistente. É obrigatório informar uma justificativa (mínimo de 15 caracteres).
-*   Após o processamento do evento de cancelamento, o estado do documento muda para **Cancelado** (`Cancelled`).
-*   *Nota:* Documentos em Rascunho ou Em Aberto (não transmitidos) podem ser cancelados localmente sem comunicação com o fisco.
+2. Transmissão (`open` -> `sending` -> resultado)
+-------------------------------------------------
 
-4. Eventos e Correções
+* No estado **Em Aberto**, o botão **Enviar** fica disponível.
+* Ao enviar, o documento vai para o estado transitório **Enviando**
+  (`sending`), e a camada de integração executa a comunicação com o fisco.
+* Possíveis resultados padrão:
+
+  * **Autorizado** (`authorized`): autorização concluída com protocolo e XML
+    de retorno.
+  * **Rejeitado** (`rejected`): erros de validação retornados pelo fisco.
+    O usuário corrige o documento e pode enviar novamente.
+  * **Denegado** (`denied`): irregularidade fiscal. Em geral, representa um
+    estado final para aquela numeração.
+
+* Observação: para documentos não eletrônicos (ou sem processador), o fluxo de
+  envio pode finalizar diretamente em **Autorizado** conforme a implementação.
+
+3. Cancelamento (`*` -> `cancel`)
+---------------------------------
+
+* O estado **Cancelado** (`cancel`) pode ser atingido a partir de múltiplos
+  estados no fluxo base (`authorized`, `open`, `rejected`, `draft`, `sending`).
+* Para documentos autorizados eletrônicos emitidos pela empresa, a ação de
+  cancelar abre assistente próprio para coleta/processamento da justificativa.
+* Para documentos ainda não autorizados, o cancelamento pode ocorrer
+  diretamente no fluxo local.
+
+4. Retorno para Rascunho (`*` -> `draft`)
+-----------------------------------------
+
+* O fluxo base permite retornar para **Rascunho** (`draft`) a partir de
+  `open`, `sending`, `rejected`, `cancel`, `denied` e também de `draft`
+  (idempotente).
+* Essa ação limpa informações transitórias de erro/relatório para permitir
+  nova preparação do documento.
+
+5. Eventos e correções
 ----------------------
-*   **Carta de Correção (CC-e):** Para documentos autorizados (como NF-e e CT-e), utilize a ação "Carta de Correção" para sanar erros em campos permitidos pela legislação.
-*   **Inutilização:** Caso uma numeração seja pulada acidentalmente ou por falha técnica, utilize a funcionalidade de Inutilização de Numeração (menu Fiscal > Inutilização) para reportar a faixa ao fisco.
 
-5. Visualização e PDF
----------------------
-*   Em estados válidos (Em Aberto, Autorizado), os botões **Visualizar XML** e **Visualizar PDF** permitem inspecionar o arquivo enviado e imprimir o DANFE/DACTE/DAMDFE correspondente.
+* **Carta de Correção (CC-e):** para documentos autorizados que suportam o
+  evento.
+* **Inutilização de Numeração:** para faixas de numeração não utilizadas,
+  conforme regras fiscais aplicáveis.
+
+6. Extensão do workflow por módulo fiscal
+-----------------------------------------
+
+A FSM deste módulo é projetada para extensão. Módulos de tipos fiscais
+específicos podem sobrescrever `get_state_machine_config()` e callbacks
+relacionados para:
+
+* incluir estados adicionais;
+* alterar transições válidas;
+* personalizar regras de pré/pós-transição;
+* adaptar o fluxo ao comportamento dos webservices de cada documento.
