@@ -575,12 +575,12 @@ class AccountMove(models.Model):
             for index, line in enumerate(record.invoice_line_ids):
                 source_line = source_lines[index] if index < len(source_lines) else False
                 line_source_op = source_line and source_line.fiscal_operation_id
-                target_line_op = (
-                    force_fiscal_operation
-                    or (line_source_op and line_source_op.return_fiscal_operation_id)
-                    or target_op
-                )
-                if not target_line_op:
+
+                if force_fiscal_operation:
+                    line.fiscal_operation_id = force_fiscal_operation
+                    continue
+
+                if not (line_source_op and line_source_op.return_fiscal_operation_id):
                     raise UserError(
                         _(
                             "Line without Return Fiscal Operation!\n"
@@ -588,7 +588,8 @@ class AccountMove(models.Model):
                             name=line.name,
                         )
                     )
-                line.fiscal_operation_id = target_line_op
+
+                line.fiscal_operation_id = line_source_op.return_fiscal_operation_id
 
             # This method is in l10n_br_fiscal_subsequent_document module, the IF
             # is necessary to avoid a 'glue module' or direct dependence.
