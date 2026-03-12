@@ -411,7 +411,7 @@ class AccountMove(models.Model):
             and move.fiscal_operation_id.journal_id
         )
         for move in fisc_operation_driven:
-            move.journal_id = self.fiscal_operation_id.journal_id
+            move.journal_id = move.fiscal_operation_id.journal_id
         return super(AccountMove, self - fisc_operation_driven)._compute_journal_id()
 
     def open_fiscal_document(self):

@@ -34,8 +34,11 @@ class AccountMoveReversal(models.TransientModel):
 
     @api.depends("move_ids", "force_fiscal_operation_id")
     def _compute_journal_id(self):
-        for record in self:
-            if record.force_fiscal_operation_id.journal_id:
-                record.journal_id = record.force_fiscal_operation_id.journal_id
-            else:
-                return super()._compute_journal_id()
+        fisc_operation_driven = self.filtered(
+            lambda reversal: reversal.force_fiscal_operation_id.journal_id
+        )
+        for reversal in fisc_operation_driven:
+            reversal.journal_id = reversal.force_fiscal_operation_id.journal_id
+        return super(
+            AccountMoveReversal, self - fisc_operation_driven
+        )._compute_journal_id()
