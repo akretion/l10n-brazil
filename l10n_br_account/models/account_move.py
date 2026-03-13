@@ -572,24 +572,30 @@ class AccountMove(models.Model):
             record.fiscal_operation_id = target_op
 
             source_lines = source_move.invoice_line_ids
-            for index, line in enumerate(record.invoice_line_ids):
-                source_line = source_lines[index] if index < len(source_lines) else False
-                line_source_op = source_line and source_line.fiscal_operation_id
-
-                if force_fiscal_operation:
-                    line.fiscal_operation_id = force_fiscal_operation
-                    continue
-
-                if not (line_source_op and line_source_op.return_fiscal_operation_id):
+            if not force_fiscal_operation:
+                missing_line = source_lines.filtered(
+                    lambda line: not line.fiscal_operation_id.return_fiscal_operation_id
+                )[:1]
+                if missing_line:
                     raise UserError(
                         _(
                             "Line without Return Fiscal Operation!\n"
                             "Please force one!\n%(name)s",
-                            name=line.name,
+                            name=missing_line.name,
                         )
                     )
 
-                line.fiscal_operation_id = line_source_op.return_fiscal_operation_id
+            for index, line in enumerate(record.invoice_line_ids):
+                source_line = source_lines[index] if index < len(source_lines) else False
+
+                if force_fiscal_operation:
+                    line.fiscal_operation_id = force_fiscal_operation
+                elif source_line:
+                    line.fiscal_operation_id = (
+                        source_line.fiscal_operation_id.return_fiscal_operation_id
+                    )
+                else:
+                    line.fiscal_operation_id = target_op
 
             # This method is in l10n_br_fiscal_subsequent_document module, the IF
             # is necessary to avoid a 'glue module' or direct dependence.
