@@ -411,7 +411,7 @@ class AccountMove(models.Model):
             and move.fiscal_operation_id.journal_id
         )
         for move in fisc_operation_driven:
-            move.journal_id = self.fiscal_operation_id.journal_id
+            move.journal_id = move.fiscal_operation_id.journal_id
         return super(AccountMove, self - fisc_operation_driven)._compute_journal_id()
 
     def open_fiscal_document(self):
@@ -546,88 +546,56 @@ class AccountMove(models.Model):
         return res
 
     def _reverse_moves(self, default_values_list=None, cancel=False):
-        _logger.info("DEBUG _reverse_moves starting")
         new_moves = super()._reverse_moves(
             default_values_list=default_values_list, cancel=cancel
         )
-        _logger.info("DEBUG _reverse_moves new_moves: %s", new_moves.mapped("name"))
-        force_fiscal_operation_id = False
+        force_fiscal_operation = self.env["l10n_br_fiscal.operation"]
         if self.env.context.get("force_fiscal_operation_id"):
-            force_fiscal_operation_id = self.env["l10n_br_fiscal.operation"].browse(
+            force_fiscal_operation = self.env["l10n_br_fiscal.operation"].browse(
                 self.env.context.get("force_fiscal_operation_id")
             )
-        for record in new_moves:
-            _logger.info(
-                "DEBUG processing record %s document_type_id %s",
-                record.name,
-                record.document_type_id,
-            )
-            if not record.document_type_id:
-                continue
 
+        for record in new_moves.filtered("document_type_id"):
             source_move = record.reversed_entry_id
-            _logger.info(
-                "DEBUG source_move: %s", source_move.name if source_move else "None"
-            )
             if not source_move:
                 continue
 
-            # Fallback to source move's operation if not copied
             source_op = source_move.fiscal_operation_id
-            _logger.info("DEBUG source_op: %s", source_op)
             if not source_op:
-                _logger.info("DEBUG RAISING Document without Fiscal Operation")
+                raise UserError(_("Document without Fiscal Operation!\nForce one!"))
+
+            target_op = force_fiscal_operation or source_op.return_fiscal_operation_id
+            if not target_op:
                 raise UserError(
-                    _("""Document without Fiscal Operation! \n Force one!""")
+                    _("Document without Return Fiscal Operation!\nForce one!")
                 )
+            record.fiscal_operation_id = target_op
 
-            if (
-                not force_fiscal_operation_id
-                and not source_op.return_fiscal_operation_id
-            ):
-                raise UserError(
-                    _("""Document without Return Fiscal Operation! \n Force one!""")
-                )
-
-            record.fiscal_operation_id = (
-                force_fiscal_operation_id or source_op.return_fiscal_operation_id
-            )
-
-            _logger.info(
-                "DEBUG record.invoice_line_ids count: %s", len(record.invoice_line_ids)
-            )
-            # Match lines between reversed move and source move
-            # In reversal, order is usually preserved.
-            if len(record.invoice_line_ids) == len(source_move.invoice_line_ids):
-                matched_lines = zip(
-                    record.invoice_line_ids, source_move.invoice_line_ids
-                )
-            else:
-                # Fallback to empty source lines if count mismatch (unlikely)
-                matched_lines = [
-                    (line, self.env["account.move.line"])
-                    for line in record.invoice_line_ids
-                ]
-
-            for line, source_line in matched_lines:
-                line_source_op = source_line.fiscal_operation_id
-
-                if (
-                    not force_fiscal_operation_id
-                    and not line_source_op.return_fiscal_operation_id
-                ):
+            source_lines = source_move.invoice_line_ids
+            if not force_fiscal_operation:
+                missing_line = source_lines.filtered(
+                    lambda line: not line.fiscal_operation_id.return_fiscal_operation_id
+                )[:1]
+                if missing_line:
                     raise UserError(
                         _(
-                            """Line without Return Fiscal Operation! \n
-                            Please force one! \n%(name)s""",
-                            name=line.name,
+                            "Line without Return Fiscal Operation!\n"
+                            "Please force one!\n%(name)s",
+                            name=missing_line.name,
                         )
                     )
 
-                line.fiscal_operation_id = (
-                    force_fiscal_operation_id
-                    or line_source_op.return_fiscal_operation_id
-                )
+            for index, line in enumerate(record.invoice_line_ids):
+                source_line = source_lines[index] if index < len(source_lines) else False
+
+                if force_fiscal_operation:
+                    line.fiscal_operation_id = force_fiscal_operation
+                elif source_line:
+                    line.fiscal_operation_id = (
+                        source_line.fiscal_operation_id.return_fiscal_operation_id
+                    )
+                else:
+                    line.fiscal_operation_id = target_op
 
             # This method is in l10n_br_fiscal_subsequent_document module, the IF
             # is necessary to avoid a 'glue module' or direct dependence.
