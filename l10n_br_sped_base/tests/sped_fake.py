@@ -90,7 +90,7 @@ class Registro0000(models.Model):
             # "DT_INI": (will use the declaration field directly),
             # "DT_FIN": (will use the declaration field directly),
             "NOME": record.legal_name,
-            "CNPJ": misc.punctuation_rm(record.cnpj_cpf),
+            "CNPJ": misc.punctuation_rm(record.vat),
             "UF": record.state_id.code,
             "IE": misc.punctuation_rm(record.l10n_br_ie_code),
             "COD_MUN": record.city_id.ibge_code,
