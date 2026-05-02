@@ -8,7 +8,7 @@ from io import StringIO
 
 from lxml.builder import E
 
-from odoo import _, api, fields, models
+from odoo import api, fields, models
 
 from .sped_mixin import LAYOUT_VERSIONS
 
@@ -49,12 +49,12 @@ class SpedDeclaration(models.AbstractModel):
 
     DT_INI = fields.Date(
         string="Start Date",
-        default=_get_default_dt_ini,
+        default=lambda self: self._get_default_dt_ini(),
     )
 
     DT_FIN = fields.Date(
         string="End Date",
-        default=_get_default_dt_fin,
+        default=lambda self: self._get_default_dt_fin(),
     )
 
     split_sped_by_bloco = fields.Boolean()
@@ -100,15 +100,13 @@ class SpedDeclaration(models.AbstractModel):
     def _get_kind(self) -> str:
         return self._name.replace(".0000", "").split(".")[-1]
 
-    def name_get(self):
-        return [
-            (
-                declaration.id,
+    @api.depends("DT_FIN", "company_id")
+    def _compute_display_name(self):
+        for declaration in self:
+            declaration.display_name = (
                 f"{declaration.DT_FIN:%m-%Y}-"
-                f"{declaration.company_id.name.replace(' ', '_')}",
+                f"{declaration.company_id.name.replace(' ', '_')}"
             )
-            for declaration in self
-        ]
 
     @api.depends("company_id", "DT_INI", "DT_FIN")
     def _compute_fiscal_documents(self):
@@ -158,7 +156,7 @@ class SpedDeclaration(models.AbstractModel):
         # TODO add cron pulling from Odoo for open declarations
         self.ensure_one()
         log_msg = StringIO()
-        log_msg.write(f"<h3>{_('Pulled from Odoo')}</h3>")
+        log_msg.write(f"<h3>{self.env._('Pulled from Odoo')}</h3>")
         kind = self._get_kind()
         mixin_env = self.env["l10n_br_sped.mixin"].with_context(
             company_id=self.company_id.id,
@@ -188,7 +186,7 @@ class SpedDeclaration(models.AbstractModel):
         self.ensure_one()
         self.env["l10n_br_sped.mixin"]._flush_registers(self._get_kind(), self.id)
         self.message_post(
-            body=f"<h3>{_('Flushed all Registers from Declaration!')}</h3>"
+            body=self.env._("<h3>Flushed all Registers from Declaration!</h3>")
         )
 
     def button_done(self):

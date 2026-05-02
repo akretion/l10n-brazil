@@ -8,7 +8,7 @@ from io import StringIO
 
 from lxml.builder import E
 
-from odoo import _, api, fields, models
+from odoo import api, fields, models
 from odoo.exceptions import UserError
 from odoo.tools import float_is_zero
 
@@ -72,7 +72,7 @@ class SpedMixin(models.AbstractModel):
             model = self.env["ir.model"].search([("model", "=", res.res_model)])
             if not model:
                 raise UserError(
-                    _(
+                    self.env._(
                         "Undefined mapping model for Register "
                         "%(name)s and model %(model)s",
                         name=self._name,
@@ -385,7 +385,7 @@ class SpedMixin(models.AbstractModel):
                     if "001" in reg_code or "990" in reg_code or reg_code == "9999":
                         continue
                     raise UserError(
-                        _(
+                        self.env._(
                             "Register %(code)s doesn't match "
                             "Odoo %(kind)s SPED structure!",
                             code=reg_code,
@@ -423,7 +423,7 @@ class SpedMixin(models.AbstractModel):
                 previous_register = register
 
         log_msg = StringIO()
-        log_msg.write(f"<h3>{_('Imported from file:')}</h3>")
+        log_msg.write(f"<h3>{self.env._('Imported from file:')}</h3>")
         for _code, registers in level_2_registers.items():
             registers[0]._log_chatter_sped_item(log_msg, 2, registers)
         declaration.message_post(body=log_msg.getvalue())
