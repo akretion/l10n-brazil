@@ -1,0 +1,2 @@
+# [DON'T MERGE] Temporary dependencies on migration PRs
+odoo-addon-currency_rate_update @ git+https://github.com/OCA/currency.git@19.0#subdirectory=currency_rate_update
