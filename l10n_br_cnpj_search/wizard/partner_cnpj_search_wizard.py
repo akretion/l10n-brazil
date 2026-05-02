@@ -115,7 +115,6 @@ class PartnerCnpjSearchWizard(models.TransientModel):
             "city": self.city_id.name,
             "country_id": self.country_id.id,
             "phone": self.phone,
-            "mobile": self.mobile,
             "email": self.email,
             "legal_nature_id": self.legal_nature_id,
             "equity_capital": self.equity_capital,
