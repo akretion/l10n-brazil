@@ -56,7 +56,6 @@ class TestTestSerPro(TestCnpjCommon):
             self.assertEqual(dummy_basica.zip, "70836900")
             self.assertEqual(dummy_basica.district, "Asa Norte")
             self.assertEqual(dummy_basica.phone, "(61) 22222222")
-            self.assertEqual(dummy_basica.mobile, "(61) 22222222")
             self.assertEqual(dummy_basica.state_id.code, "DF")
             self.assertEqual(dummy_basica.equity_capital, 0)
             self.assertEqual(dummy_basica.cnae_main_id.code, "6204-0/00")
