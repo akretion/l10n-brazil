@@ -32,8 +32,11 @@ class TestPayments(AccountTestInvoicingCommon):
         invoice = invoice_form.save()
         invoice.action_post()
 
+        # Calculate expected total with tax dynamically
+        expected_total = 200.0 * (1 + self.tax_sale_a.amount / 100)
+
         self.assertEqual(len(invoice.due_line_ids), 1)
-        self.assertEqual(invoice.due_line_ids[0].debit, 230)
+        self.assertEqual(invoice.due_line_ids[0].debit, expected_total)
         self.assertEqual(
             invoice.due_line_ids[0].account_id,
             self.company_data["default_account_receivable"],
@@ -51,7 +54,7 @@ class TestPayments(AccountTestInvoicingCommon):
         payment_register.action_create_payments()
 
         self.assertEqual(len(invoice.payment_move_line_ids), 1)
-        self.assertEqual(invoice.payment_move_line_ids[0].credit, 230)
+        self.assertEqual(invoice.payment_move_line_ids[0].credit, expected_total)
         self.assertEqual(
             invoice.payment_move_line_ids[0].account_id,
             self.company_data["default_account_receivable"],
@@ -75,8 +78,11 @@ class TestPayments(AccountTestInvoicingCommon):
         invoice = invoice_form.save()
         invoice.action_post()
 
+        # Calculate expected total with tax dynamically
+        expected_total = 100.0 * (1 + self.tax_purchase_a.amount / 100)
+
         self.assertEqual(len(invoice.due_line_ids), 1)
-        self.assertEqual(invoice.due_line_ids[0].credit, 115)
+        self.assertEqual(invoice.due_line_ids[0].credit, expected_total)
         self.assertEqual(
             invoice.due_line_ids[0].account_id,
             self.company_data["default_account_payable"],
@@ -94,7 +100,7 @@ class TestPayments(AccountTestInvoicingCommon):
         payment_register.action_create_payments()
 
         self.assertEqual(len(invoice.payment_move_line_ids), 1)
-        self.assertEqual(invoice.payment_move_line_ids[0].debit, 115)
+        self.assertEqual(invoice.payment_move_line_ids[0].debit, expected_total)
         self.assertEqual(
             invoice.payment_move_line_ids[0].account_id,
             self.company_data["default_account_payable"],
