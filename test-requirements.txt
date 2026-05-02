@@ -1,0 +1,4 @@
+# [DON'T MERGE] Temporary dependencies on migration PRs
+odoo-addon-l10n_br_base @ git+https://github.com/akretion/l10n-brazil.git@refs/pull/257/head#subdirectory=l10n_br_base
+odoo-addon-l10n_br_fiscal @ git+https://github.com/akretion/l10n-brazil.git@refs/pull/258/head#subdirectory=l10n_br_fiscal
+odoo-addon-l10n_br_zip @ git+https://github.com/akretion/l10n-brazil.git@refs/pull/259/head#subdirectory=l10n_br_zip
