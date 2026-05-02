@@ -1,7 +1,7 @@
 # Copyright (C) 2019  KMEE
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
-from odoo import _, models
+from odoo import models
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import SITUACAO_EDOC_AUTORIZADA
 
@@ -71,7 +71,7 @@ class Document(models.Model):
             force_email=True,
         )
         return {
-            "name": _("Send Fiscal Document Email Notification"),
+            "name": self.env._("Send Fiscal Document Email Notification"),
             "type": "ir.actions.act_window",
             "view_type": "form",
             "view_mode": "form",
