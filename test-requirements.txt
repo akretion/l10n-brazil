@@ -1,2 +1,2 @@
 # [DON'T MERGE] Temporary dependency on l10n_br_base migration PR
-odoo-addon-l10n_br_base @ git+https://github.com/akretion/l10n-brazil.git@refs/pull/257/head#subdirectory=l10n_br_base
+odoo-addon-l10n_br_base @ git+https://github.com/OCA/l10n-brazil.git@refs/pull/4542/head#subdirectory=l10n_br_base
