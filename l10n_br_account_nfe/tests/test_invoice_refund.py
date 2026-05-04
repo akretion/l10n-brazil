@@ -47,6 +47,7 @@ class TestInvoiceRefund(TransactionCase):
                 document_serie_id=cls.env.ref(
                     "l10n_br_fiscal.empresa_lc_document_55_serie_1"
                 ).id,
+                fiscal_operation_id=cls.env.ref("l10n_br_fiscal.fo_venda").id,
                 invoice_line_ids=[
                     Command.create(
                         {
@@ -71,6 +72,12 @@ class TestInvoiceRefund(TransactionCase):
                             )
                             .id,
                             "name": "Refund Test",
+                            "fiscal_operation_id": cls.env.ref(
+                                "l10n_br_fiscal.fo_venda"
+                            ).id,
+                            "fiscal_operation_line_id": cls.env.ref(
+                                "l10n_br_fiscal.fo_venda_venda"
+                            ).id,
                             "uom_id": cls.env.ref("uom.product_uom_unit").id,
                         },
                     )
@@ -82,14 +89,6 @@ class TestInvoiceRefund(TransactionCase):
         payment_mode = self.env.ref("account_payment_mode.payment_mode_inbound_dd1")
 
         invoice = self.invoice
-
-        invoice.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_venda").id
-        for line in invoice.invoice_line_ids:
-            line.fiscal_operation_id = invoice.fiscal_operation_id
-            line.fiscal_operation_line_id = self.env.ref(
-                "l10n_br_fiscal.fo_venda_venda"
-            ).id
-
         invoice.action_post()
 
         move_reversal = (
