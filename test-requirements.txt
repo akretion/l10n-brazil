@@ -1,0 +1,3 @@
+# [DON'T MERGE] Temporary dependencies on migration PRs
+odoo-addon-l10n_br_base @ git+https://github.com/OCA/l10n-brazil.git@refs/pull/4542/head#subdirectory=l10n_br_base
+odoo-addon-l10n_br_fiscal @ git+https://github.com/OCA/l10n-brazil.git@refs/pull/4552/head#subdirectory=l10n_br_fiscal
