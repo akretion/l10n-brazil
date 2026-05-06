@@ -20,15 +20,13 @@ class TestUi(HttpCase):
             "state_id": self.env.ref("base.state_br_mg").id,
             "country_id": self.env.ref("base.br").id,
         }
-        partner = self.env.ref("base.partner_admin")
         with (
             mock.patch(
                 _provider_class + "._consultar_cep",
                 return_value=mocked_response,
             ),
-            mock.patch.object(
-                partner,
-                "can_edit_vat",
+            mock.patch(
+                "odoo.addons.account.models.res_partner.ResPartner.can_edit_vat",
                 return_value=True,
             ),
         ):
