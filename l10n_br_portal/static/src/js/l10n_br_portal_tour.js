@@ -73,7 +73,7 @@ odoo.define("l10n_br_portal.tour", ["@web/core/registry"], function (require) {
                 trigger: "select[name='country_id']",
                 run: function () {
                     const select = document.querySelector("select[name='country_id']");
-                    for (let option of select.options) {
+                    for (const option of select.options) {
                         if (option.text.includes("Brazil")) {
                             select.value = option.value;
                             select.dispatchEvent(new Event("change", {bubbles: true}));
@@ -87,7 +87,7 @@ odoo.define("l10n_br_portal.tour", ["@web/core/registry"], function (require) {
                 trigger: "select[name='state_id']",
                 run: function () {
                     const select = document.querySelector("select[name='state_id']");
-                    for (let option of select.options) {
+                    for (const option of select.options) {
                         if (option.text.includes("Minas Gerais")) {
                             select.value = option.value;
                             select.dispatchEvent(new Event("change", {bubbles: true}));
@@ -101,7 +101,7 @@ odoo.define("l10n_br_portal.tour", ["@web/core/registry"], function (require) {
                 trigger: "select[name='city_id']",
                 run: function () {
                     const select = document.querySelector("select[name='city_id']");
-                    for (let option of select.options) {
+                    for (const option of select.options) {
                         if (option.text.includes("Itajubá")) {
                             select.value = option.value;
                             select.dispatchEvent(new Event("change", {bubbles: true}));
