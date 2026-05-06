@@ -26,7 +26,7 @@ class TestUi(HttpCase):
                 return_value=mocked_response,
             ),
             mock.patch(
-                "odoo.addons.account.models.res_partner.ResPartner.can_edit_vat",
+                "odoo.addons.account.models.partner.ResPartner.can_edit_vat",
                 return_value=True,
             ),
         ):
