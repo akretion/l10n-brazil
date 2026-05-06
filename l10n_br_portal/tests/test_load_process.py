@@ -12,6 +12,18 @@ _provider_class = _module_ns + ".models.l10n_br_zip" + ".L10nBrZip"
 @tagged("post_install", "-at_install")
 class TestUi(HttpCase):
     def test_01_l10n_br_portal_load_tour(self):
+        # Create a fresh portal user without invoices/VAT to ensure country is editable
+        portal_partner = self.env["res.partner"].create({
+            "name": "Portal Test User",
+            "email": "portal_test@example.com",
+            "country_id": self.env.ref("base.us").id,
+        })
+        portal_user = self.env["res.users"].create({
+            "login": "portal_test",
+            "password": "portal_test",
+            "partner_id": portal_partner.id,
+            "groups_id": [(6, 0, [self.env.ref("base.group_portal").id])],
+        })
         mocked_response = {
             "zip_code": "37500015",
             "street_name": " Rua Coronel Renno",
@@ -20,19 +32,13 @@ class TestUi(HttpCase):
             "state_id": self.env.ref("base.state_br_mg").id,
             "country_id": self.env.ref("base.br").id,
         }
-        with (
-            mock.patch(
-                _provider_class + "._consultar_cep",
-                return_value=mocked_response,
-            ),
-            mock.patch(
-                "odoo.addons.account.models.partner.ResPartner.can_edit_vat",
-                return_value=True,
-            ),
+        with mock.patch(
+            _provider_class + "._consultar_cep",
+            return_value=mocked_response,
         ):
-            self.start_tour("/my/account", "l10n_br_portal_tour", login="admin")
+            self.start_tour("/my/account", "l10n_br_portal_tour", login="portal_test")
         # check result
-        record = self.env.ref("base.partner_admin")
+        record = portal_partner
         self.assertEqual(record.country_id.code, "BR")
         self.assertEqual(record.state_id.code, "MG")
         self.assertEqual(record.city_id.ibge_code, "3132404")
