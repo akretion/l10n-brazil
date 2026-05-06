@@ -1,6 +1,6 @@
 /* global Cleave */
 
-import {jsonrpc} from "@web/core/network/rpc_service";
+import {rpc} from "@web/core/network/rpc";
 import publicWidget from "@web/legacy/js/public/public_widget";
 
 publicWidget.registry.l10nBrPortalDetails = publicWidget.Widget.extend({
@@ -57,7 +57,7 @@ publicWidget.registry.l10nBrPortalDetails = publicWidget.Widget.extend({
 
     _onChangeZipcode: function () {
         var vals = {zipcode: this.$('input[name="zipcode"]').val()};
-        jsonrpc("/l10n_br/zip_search", vals).then((data) => {
+        rpc("/l10n_br/zip_search", vals).then((data) => {
             if (!data.error) {
                 this.$('input[name="district"]').val(data.district);
                 this.$('input[name="street_name"]').val(data.street_name);
