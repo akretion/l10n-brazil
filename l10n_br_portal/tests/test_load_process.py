@@ -12,8 +12,6 @@ _provider_class = _module_ns + ".models.l10n_br_zip" + ".L10nBrZip"
 @tagged("post_install", "-at_install")
 class TestUi(HttpCase):
     def test_01_l10n_br_portal_load_tour(self):
-        # Ensure admin partner can edit VAT (and thus country)
-        self.env.ref("base.partner_admin").write({"vat": False})
         mocked_response = {
             "zip_code": "37500015",
             "street_name": " Rua Coronel Renno",
@@ -22,9 +20,17 @@ class TestUi(HttpCase):
             "state_id": self.env.ref("base.state_br_mg").id,
             "country_id": self.env.ref("base.br").id,
         }
-        with mock.patch(
-            _provider_class + "._consultar_cep",
-            return_value=mocked_response,
+        partner = self.env.ref("base.partner_admin")
+        with (
+            mock.patch(
+                _provider_class + "._consultar_cep",
+                return_value=mocked_response,
+            ),
+            mock.patch.object(
+                partner,
+                "can_edit_vat",
+                return_value=True,
+            ),
         ):
             self.start_tour("/my/account", "l10n_br_portal_tour", login="admin")
         # check result
