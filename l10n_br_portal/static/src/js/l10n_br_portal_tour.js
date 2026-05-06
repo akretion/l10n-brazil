@@ -35,7 +35,11 @@ odoo.define("l10n_br_portal.tour", ["@web/core/registry"], function (require) {
             {
                 content: "Complete ZIP",
                 trigger: "input[name='zipcode']",
-                run: "edit 37500015",
+                run: function () {
+                    const input = document.querySelector("input[name='zipcode']");
+                    input.value = "37500015";
+                    input.dispatchEvent(new Event("change", { bubbles: true }));
+                },
             },
             {
                 content: "Complete DISTRICT",
