@@ -13,17 +13,21 @@ _provider_class = _module_ns + ".models.l10n_br_zip" + ".L10nBrZip"
 class TestUi(HttpCase):
     def test_01_l10n_br_portal_load_tour(self):
         # Create a fresh portal user without invoices/VAT to ensure country is editable
-        portal_partner = self.env["res.partner"].create({
-            "name": "Portal Test User",
-            "email": "portal_test@example.com",
-            "country_id": self.env.ref("base.us").id,
-        })
-        portal_user = self.env["res.users"].create({
-            "login": "portal_test",
-            "password": "portal_test",
-            "partner_id": portal_partner.id,
-            "groups_id": [(6, 0, [self.env.ref("base.group_portal").id])],
-        })
+        portal_partner = self.env["res.partner"].create(
+            {
+                "name": "Portal Test User",
+                "email": "portal_test@example.com",
+                "country_id": self.env.ref("base.us").id,
+            }
+        )
+        self.env["res.users"].create(
+            {
+                "login": "portal_test",
+                "password": "portal_test",
+                "partner_id": portal_partner.id,
+                "groups_id": [(6, 0, [self.env.ref("base.group_portal").id])],
+            }
+        )
         mocked_response = {
             "zip_code": "37500015",
             "street_name": " Rua Coronel Renno",
