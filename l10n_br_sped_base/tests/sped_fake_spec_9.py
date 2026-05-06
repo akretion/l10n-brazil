@@ -71,9 +71,7 @@ class Registro0000(models.AbstractModel):
         string="Indicador de situação especial",
         xsd_type="numeric_code",
         sped_length="1",
-        help=(
-            "Indicador de situação especial (conforme tabela publicada pelo " "Sped)."
-        ),
+        help=("Indicador de situação especial (conforme tabela publicada pelo Sped)."),
     )
 
     IND_SIT_INI_PER = fields.Char(
@@ -104,9 +102,7 @@ class Registro0000(models.AbstractModel):
         required=True,
         xsd_type="numeric_code",
         sped_length="1",
-        help=(
-            "Indicador de finalidade da escrituração: 0 - Original 1 – " "Substituta"
-        ),
+        help=("Indicador de finalidade da escrituração: 0 - Original 1 – Substituta"),
     )
 
     COD_HASH_SUB = fields.Char(
@@ -330,7 +326,7 @@ class RegistroI012(models.AbstractModel):
         required=True,
         sped_length="8",
         help=(
-            "Natureza do livro associado; finalidade a que se destina o " "instrumento."
+            "Natureza do livro associado; finalidade a que se destina o instrumento."
         ),
     )
 
@@ -436,7 +432,7 @@ class RegistroI030(models.AbstractModel):
         string="Número de Identificação do Registro de Empresas",
         xsd_type="numeric_code",
         sped_length="11",
-        help=("Número de Identificação do Registro de Empresas da Junta " "Comercial."),
+        help=("Número de Identificação do Registro de Empresas da Junta Comercial."),
     )
 
     CNPJ = fields.Char(
@@ -715,8 +711,7 @@ class RegistroJ930(models.AbstractModel):
     IND_CRC = fields.Char(
         string="Número de inscrição do contabilista",
         help=(
-            "Número de inscrição do contabilista no Conselho Regional de "
-            "Contabilidade."
+            "Número de inscrição do contabilista no Conselho Regional de Contabilidade."
         ),
     )
 
@@ -741,9 +736,7 @@ class RegistroJ930(models.AbstractModel):
     DT_CRC = fields.Date(
         string="Data de validade da Certidão",
         sped_length="8",
-        help=(
-            "Data de validade da Certidão de Regularidade Profissional do " "Contador"
-        ),
+        help=("Data de validade da Certidão de Regularidade Profissional do Contador"),
     )
 
     IND_RESP_LEGAL = fields.Char(
