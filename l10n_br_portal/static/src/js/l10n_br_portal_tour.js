@@ -111,8 +111,10 @@ odoo.define("l10n_br_portal.tour", ["@web/core/registry"], function (require) {
                 },
             },
             {
+                content: "Submit the form",
                 trigger: "button[type='submit']",
                 run: "click",
+                expectUnloadPage: true,
             },
         ],
     });
