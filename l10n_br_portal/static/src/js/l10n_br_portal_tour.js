@@ -15,6 +15,16 @@ odoo.define("l10n_br_portal.tour", ["@web/core/registry"], function (require) {
                 run: "edit Mileo",
             },
             {
+                content: "Complete email",
+                trigger: "input[name='email']",
+                run: "edit test@example.com",
+            },
+            {
+                content: "Complete phone",
+                trigger: "input[name='phone']",
+                run: "edit 1234567890",
+            },
+            {
                 content: "Complete CPF",
                 trigger: "input[name='vat']",
                 run: "edit 89604455095",
@@ -42,6 +52,11 @@ odoo.define("l10n_br_portal.tour", ["@web/core/registry"], function (require) {
                     input.value = "37500015";
                     input.dispatchEvent(new Event("change", {bubbles: true}));
                 },
+            },
+            {
+                content: "Complete STREET",
+                trigger: "input[name='street_name']",
+                run: "edit Rua Teste",
             },
             {
                 content: "Complete DISTRICT",
