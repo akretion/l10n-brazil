@@ -44,7 +44,11 @@ class TestUi(HttpCase):
         # check result
         record = portal_partner
         # Debug: check if any fields were updated
-        self.assertEqual(record.name, "Mileo", "Name was not updated - form may not have submitted")
+        self.assertEqual(
+            record.name,
+            "Mileo",
+            "Name was not updated - form may not have submitted",
+        )
         self.assertEqual(record.email, "test@example.com", "Email was not updated")
         self.assertEqual(record.country_id.code, "BR")
         self.assertEqual(record.state_id.code, "MG")
