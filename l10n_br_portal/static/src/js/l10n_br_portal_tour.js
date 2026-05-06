@@ -54,25 +54,19 @@ odoo.define("l10n_br_portal.tour", ["@web/core/registry"], function (require) {
                 run: "edit 200",
             },
             {
-                content: "check country is Brasil",
-                trigger: "select[name='country_id']:contains('Brazil')",
-                run: function () {
-                    return true;
-                },
+                content: "Select country Brasil",
+                trigger: "select[name='country_id']",
+                run: "selectByLabel Brazil",
             },
             {
-                content: "check state is Minas Gerais",
-                trigger: "select[name='state_id']:contains('Minas Gerais')",
-                run: function () {
-                    return true;
-                },
+                content: "Select state Minas Gerais",
+                trigger: "select[name='state_id']",
+                run: "selectByLabel Minas Gerais",
             },
             {
-                content: "check city is Itajubá",
-                trigger: "select[name='city_id']:contains('Itajubá')",
-                run: function () {
-                    return true;
-                },
+                content: "Select city Itajubá",
+                trigger: "select[name='city_id']",
+                run: "selectByLabel Itajubá",
             },
             {
                 trigger: "button[type='submit']",
