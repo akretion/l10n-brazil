@@ -27,7 +27,11 @@ odoo.define("l10n_br_portal.tour", ["@web/core/registry"], function (require) {
             {
                 content: "Complete CPF",
                 trigger: "input[name='vat']",
-                run: "edit 89604455095",
+                run: function () {
+                    const input = document.querySelector("input[name='vat']");
+                    input.value = "89604455095";
+                    input.dispatchEvent(new Event("input", {bubbles: true}));
+                },
             },
             {
                 content: "Complete Company Name",

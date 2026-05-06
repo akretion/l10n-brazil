@@ -51,8 +51,6 @@ class L10nBrPortal(CustomerPortal):
         city_id = None
         if post and post.get("city_id"):
             city_id = request.env["res.city"].sudo().browse(int(post["city_id"]))
-            if city_id:
-                post["city"] = city_id.name
         res = super().account(redirect, **post)
         if city_id:
             request.env.user.partner_id.sudo().write({"city_id": city_id.id})
