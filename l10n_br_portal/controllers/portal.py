@@ -11,6 +11,7 @@ class L10nBrPortal(CustomerPortal):
     def _get_mandatory_fields(self):
         fields = super()._get_mandatory_fields()
         fields.remove("street")
+        fields.remove("city")
         fields += [
             "state_id",
             "city_id",
