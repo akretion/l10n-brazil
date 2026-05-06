@@ -1,3 +1,5 @@
+/* global document, Event */
+
 odoo.define("l10n_br_portal.tour", ["@web/core/registry"], function (require) {
     "use strict";
 
@@ -38,7 +40,7 @@ odoo.define("l10n_br_portal.tour", ["@web/core/registry"], function (require) {
                 run: function () {
                     const input = document.querySelector("input[name='zipcode']");
                     input.value = "37500015";
-                    input.dispatchEvent(new Event("change", { bubbles: true }));
+                    input.dispatchEvent(new Event("change", {bubbles: true}));
                 },
             },
             {

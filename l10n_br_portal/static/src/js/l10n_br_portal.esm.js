@@ -1,7 +1,7 @@
 /* global Cleave */
 
-import {rpc} from "@web/core/network/rpc";
 import publicWidget from "@web/legacy/js/public/public_widget";
+import {rpc} from "@web/core/network/rpc";
 
 publicWidget.registry.l10nBrPortalDetails = publicWidget.Widget.extend({
     selector: ".o_portal_details",
