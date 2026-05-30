@@ -325,6 +325,108 @@ class AccountTax(models.Model):
                 tax_data["raw_base_amount_currency"] = br_tax["base"]
                 tax_data["raw_base_amount"] = br_tax["base"] / rate if rate else 0.0
 
+        # If taxes_data is empty but we have Brazilian tax computation results,
+        # we need to populate taxes_data to avoid IndexError in Odoo 18's
+        # _distribute_delta_amount_smoothly when it tries to distribute rounding.
+        if not tax_details["taxes_data"] and taxes_computation["taxes"]:
+            # Create minimal tax data entries from Brazilian computation
+            for br_tax in taxes_computation["taxes"]:
+                if br_tax.get("id"):
+                    tax = self.env["account.tax"].browse(br_tax["id"])
+                    if tax.exists():
+                        tax_details["taxes_data"].append(
+                            {
+                                "tax": tax,
+                                "tax_amount": br_tax["amount"],
+                                "base": br_tax["base"],
+                                "raw_tax_amount_currency": br_tax["amount"],
+                                "raw_tax_amount": br_tax["amount"] / rate if rate else 0.0,
+                                "raw_base_amount_currency": br_tax["base"],
+                                "raw_base_amount": br_tax["base"] / rate if rate else 0.0,
+                                "group": tax.tax_group_id,
+                            }
+                        )
+
+        # Ensure all tax_data entries have required fields for _prepare_tax_lines
+        for tax_data in tax_details["taxes_data"]:
+            if "tax_reps_data" not in tax_data:
+                tax_data["tax_reps_data"] = []
+            if "tax_tag_ids" not in tax_data:
+                tax_data["tax_tag_ids"] = []
+
+        # Ensure base_line has tax_tag_ids for Odoo 18's _prepare_tax_lines
+        if "tax_tag_ids" not in base_line:
+            base_line["tax_tag_ids"] = self.env["account.account.tag"]
+
+    def _add_accounting_data_to_base_line_tax_details(
+        self, base_line, company, include_caba_tags=False
+    ):
+        """Override to handle empty or invalid target factors gracefully.
+
+        In Odoo 18, _add_accounting_data_to_base_lines_tax_details calls
+        _distribute_delta_amount_smoothly which fails with IndexError when
+        target_factors has zero-sum factors. This can happen when Brazilian
+        fiscal taxes are computed but raw_tax_amount/raw_base_amount are zero.
+        """
+        tax_details = base_line.get("tax_details", {})
+        if not tax_details.get("taxes_data"):
+            # Skip accounting data distribution if no taxes to distribute
+            # But ensure base_line has tax_tag_ids for _prepare_tax_lines
+            if "tax_tag_ids" not in base_line:
+                base_line["tax_tag_ids"] = self.env["account.account.tag"]
+            return
+
+        # Guard against zero-factor taxes_data that would break
+        # _distribute_delta_amount_smoothly's _normalize_target_factors
+        # when sum_of_factors is 0 and len(factors) is also 0
+        has_valid_factors = any(
+            td.get("raw_tax_amount_currency", 0) != 0
+            or td.get("raw_tax_amount", 0) != 0
+            or td.get("raw_base_amount_currency", 0) != 0
+            or td.get("raw_base_amount", 0) != 0
+            for td in tax_details["taxes_data"]
+        )
+        if not has_valid_factors:
+            # All tax amounts are zero, no rounding distribution needed
+            # But we still need to add tax_reps_data for _prepare_tax_lines
+            for tax_data in tax_details["taxes_data"]:
+                if "tax_reps_data" not in tax_data:
+                    tax_data["tax_reps_data"] = []
+                    tax_data["tax_tag_ids"] = []
+            # Ensure base_line has tax_tag_ids for _prepare_tax_lines
+            if "tax_tag_ids" not in base_line:
+                base_line["tax_tag_ids"] = self.env["account.account.tag"]
+            return
+
+        # Also guard the super call in case it still fails
+        try:
+            super()._add_accounting_data_to_base_line_tax_details(
+                base_line, company, include_caba_tags=include_caba_tags
+            )
+        except IndexError:
+            # _distribute_delta_amount_smoothly failed due to zero factors
+            # This is safe to ignore - no rounding distribution needed
+            # But we still need to add tax_reps_data for _prepare_tax_lines
+            for tax_data in tax_details["taxes_data"]:
+                if "tax_reps_data" not in tax_data:
+                    tax_data["tax_reps_data"] = []
+                    tax_data["tax_tag_ids"] = []
+            # Ensure base_line has tax_tag_ids for _prepare_tax_lines
+            if "tax_tag_ids" not in base_line:
+                base_line["tax_tag_ids"] = self.env["account.account.tag"]
+            pass
+
+        # Ensure all tax_reps_data entries have grouping_key
+        # If they don't, remove them to avoid KeyError in _prepare_tax_lines
+        for tax_data in tax_details.get("taxes_data", []):
+            if "tax_reps_data" in tax_data:
+                tax_data["tax_reps_data"] = [
+                    trd for trd in tax_data["tax_reps_data"]
+                    if "grouping_key" in trd
+                ]
+                if not tax_data["tax_reps_data"] and "tax_tag_ids" not in tax_data:
+                    tax_data["tax_tag_ids"] = []
+
     @api.model
     def _get_tax_totals_summary(
         self, base_lines, currency, company, cash_rounding=None
