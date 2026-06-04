@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+  <data>
+    <record id="local_config_setting" model="ir.config_parameter">
+      <field name="key">xml_akretion_config</field>
+      <field name="value">1</field>
+    </record>
+  </data>
+</odoo>
