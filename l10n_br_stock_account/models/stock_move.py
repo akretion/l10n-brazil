@@ -37,9 +37,6 @@ class StockMove(models.Model):
     # Adapt Mixin's fields
     fiscal_tax_ids = fields.Many2many(
         comodel_name="l10n_br_fiscal.tax",
-        relation="fiscal_move_line_tax_rel",
-        column1="document_id",
-        column2="fiscal_tax_id",
         string="Fiscal Taxes",
     )
 
