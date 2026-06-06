@@ -37,6 +37,7 @@ class StockRuleTest(TransactionCase):
                             "location_dest_id": cls.env.ref(
                                 "stock.stock_location_output"
                             ).id,
+                            "location_dest_from_rule": True,
                             "invoice_state": "2binvoiced",
                             "fiscal_operation_id": cls.env.ref(
                                 "l10n_br_fiscal.fo_venda"

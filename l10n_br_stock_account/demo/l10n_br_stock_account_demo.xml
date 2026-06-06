@@ -89,6 +89,7 @@
         <field name="freight_value">100</field>
         <field name="insurance_value">100</field>
         <field name="other_value">100</field>
+        <field name="price_unit">100</field>
     </record>
 
     <record model="stock.move" id="main_company-move_1_2">
@@ -111,6 +112,7 @@
         <field name="freight_value">100</field>
         <field name="insurance_value">100</field>
         <field name="other_value">100</field>
+        <field name="price_unit">100</field>
     </record>
 
     <!-- usado para o teste de não agrupar qdo operação fiscal for diferente -->
@@ -134,6 +136,7 @@
         <field name="freight_value">100</field>
         <field name="insurance_value">100</field>
         <field name="other_value">100</field>
+        <field name="price_unit">100</field>
     </record>
 
     <!-- Picking Duplicado para testar o Agrupamento -->
@@ -164,10 +167,12 @@
             name="fiscal_operation_line_id"
             ref="l10n_br_fiscal.fo_simples_remessa_simples_remessa"
         />
+        <field name="cfop_id" ref="l10n_br_fiscal.cfop_5949" />
         <field name="company_id" ref="base.main_company" />
         <field name="freight_value">100</field>
         <field name="insurance_value">100</field>
         <field name="other_value">100</field>
+        <field name="price_unit">100</field>
     </record>
 
     <record model="stock.move" id="main_company-move_2_2">
@@ -190,6 +195,7 @@
         <field name="freight_value">100</field>
         <field name="insurance_value">100</field>
         <field name="other_value">100</field>
+        <field name="price_unit">100</field>
     </record>
 
     <!-- usado para o teste de não agrupar qdo operação fiscal for diferente -->
@@ -213,6 +219,7 @@
         <field name="freight_value">100</field>
         <field name="insurance_value">100</field>
         <field name="other_value">100</field>
+        <field name="price_unit">100</field>
     </record>
 
     <!-- Teste Agrupamento - Endereço de Entrega diferente do Faturamento -->
@@ -255,6 +262,7 @@
         <field name="freight_value">100</field>
         <field name="insurance_value">100</field>
         <field name="other_value">100</field>
+        <field name="price_unit">100</field>
     </record>
 
     <record model="stock.move" id="main_company-move_3_2">
@@ -279,6 +287,7 @@
         <field name="freight_value">100</field>
         <field name="insurance_value">100</field>
         <field name="other_value">100</field>
+        <field name="price_unit">100</field>
     </record>
 
     <!-- usado para o teste de não agrupar qdo operação fiscal for diferente -->
@@ -304,6 +313,7 @@
         <field name="freight_value">100</field>
         <field name="insurance_value">100</field>
         <field name="other_value">100</field>
+        <field name="price_unit">100</field>
     </record>
 
     <!-- Teste Agrupamento - Endereço de Entrega diferente do Faturamento 2-->
@@ -342,6 +352,7 @@
         <field name="freight_value">100</field>
         <field name="insurance_value">100</field>
         <field name="other_value">100</field>
+        <field name="price_unit">100</field>
     </record>
 
     <record model="stock.move" id="main_company-move_4_2">
@@ -366,6 +377,7 @@
         <field name="freight_value">100</field>
         <field name="insurance_value">100</field>
         <field name="other_value">100</field>
+        <field name="price_unit">100</field>
     </record>
 
     <!-- usado para o teste de não agrupar qdo operação fiscal for diferente -->
@@ -391,6 +403,7 @@
         <field name="freight_value">100</field>
         <field name="insurance_value">100</field>
         <field name="other_value">100</field>
+        <field name="price_unit">100</field>
     </record>
 
     <!-- Teste Agrupamento - Endereço de Entrega diferente do Faturamento -->
@@ -442,6 +455,7 @@
         <field name="freight_value">100</field>
         <field name="insurance_value">100</field>
         <field name="other_value">100</field>
+        <field name="price_unit">100</field>
     </record>
 
     <record model="stock.move" id="main_company-move_5_2">
@@ -469,6 +483,7 @@
         <field name="freight_value">100</field>
         <field name="insurance_value">100</field>
         <field name="other_value">100</field>
+        <field name="price_unit">100</field>
     </record>
 
     <!-- usado para o teste de não agrupar qdo operação fiscal for diferente -->
@@ -497,6 +512,7 @@
         <field name="freight_value">100</field>
         <field name="insurance_value">100</field>
         <field name="other_value">100</field>
+        <field name="price_unit">100</field>
     </record>
 
     <!-- Teste Agrupamento - Endereço de Entrega diferente do Faturamento 6-->
@@ -535,6 +551,7 @@
         <field name="freight_value">100</field>
         <field name="insurance_value">100</field>
         <field name="other_value">100</field>
+        <field name="price_unit">100</field>
     </record>
 
     <record model="stock.move" id="main_company-move_6_2">
@@ -559,6 +576,7 @@
         <field name="freight_value">100</field>
         <field name="insurance_value">100</field>
         <field name="other_value">100</field>
+        <field name="price_unit">100</field>
     </record>
 
     <!-- usado para o teste de não agrupar qdo operação fiscal for diferente -->
@@ -584,6 +602,7 @@
         <field name="freight_value">100</field>
         <field name="insurance_value">100</field>
         <field name="other_value">100</field>
+        <field name="price_unit">100</field>
     </record>
 
     <!-- Teste Agrupamento - Endereço de Entrega diferente do Faturamento -->
@@ -637,6 +656,7 @@
         <field name="freight_value">100</field>
         <field name="insurance_value">100</field>
         <field name="other_value">100</field>
+        <field name="price_unit">100</field>
     </record>
 
     <record model="stock.move" id="main_company-move_7_2">
@@ -664,6 +684,7 @@
         <field name="freight_value">100</field>
         <field name="insurance_value">100</field>
         <field name="other_value">100</field>
+        <field name="price_unit">100</field>
     </record>
 
     <!-- usado para o teste de não agrupar qdo operação fiscal for diferente -->
@@ -692,6 +713,7 @@
         <field name="freight_value">100</field>
         <field name="insurance_value">100</field>
         <field name="other_value">100</field>
+        <field name="price_unit">100</field>
     </record>
 
     <!-- Teste Agrupamento - Endereço de Entrega diferente do Faturamento 2-->
@@ -730,6 +752,7 @@
         <field name="freight_value">100</field>
         <field name="insurance_value">100</field>
         <field name="other_value">100</field>
+        <field name="price_unit">100</field>
     </record>
 
     <record model="stock.move" id="main_company-move_8_2">
@@ -754,6 +777,7 @@
         <field name="freight_value">100</field>
         <field name="insurance_value">100</field>
         <field name="other_value">100</field>
+        <field name="price_unit">100</field>
     </record>
 
     <!-- usado para o teste de não agrupar qdo operação fiscal for diferente -->
@@ -779,6 +803,7 @@
         <field name="freight_value">100</field>
         <field name="insurance_value">100</field>
         <field name="other_value">100</field>
+        <field name="price_unit">100</field>
     </record>
 
     <!-- Dados demo com a empresa Lucro Presumido para validar os impostos
