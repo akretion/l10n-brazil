@@ -116,6 +116,11 @@ def create_locations_quants(env, locations, products):
 
 def post_init_hook(env):
     if env.ref("base.module_l10n_br_stock").demo:
+        # Create external IDs for demo company warehouses (they didn't exist
+        # during pre_init_hook because stock module creates them after)
+        set_stock_warehouse_external_ids(env, "l10n_br_base.empresa_simples_nacional")
+        set_stock_warehouse_external_ids(env, "l10n_br_base.empresa_lucro_presumido")
+
         # Get warehouses for demo companies
         company_sn = env.ref(
             "l10n_br_base.empresa_simples_nacional", raise_if_not_found=False
