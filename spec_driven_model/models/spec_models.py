@@ -3,16 +3,27 @@
 
 import logging
 import sys
-from collections import OrderedDict, defaultdict
+from collections import OrderedDict
 from importlib import import_module
 from inspect import getmembers, isclass
 
 from odoo import SUPERUSER_ID, _, api, models
 from odoo.tools import mute_logger
 
-SPEC_MIXIN_MAPPINGS = defaultdict(dict)  # by db
-
 _logger = logging.getLogger(__name__)
+
+
+def _get_spec_mappings(registry):
+    """Get the spec mixin-to-concrete mapping dict from the registry.
+
+    This replaces the former module-level SPEC_MIXIN_MAPPINGS global.
+    Attaching mappings to the registry ensures they are properly scoped
+    to each database and are rebuilt on registry reloads (e.g. during
+    tests), avoiding stale state leaks.
+    """
+    if not hasattr(registry, "_spec_mixin_mappings"):
+        registry._spec_mixin_mappings = {}
+    return registry._spec_mixin_mappings
 
 
 class SelectionMuteLogger(mute_logger):
@@ -96,7 +107,7 @@ class SpecModel(models.Model):
         ]
         for parent in parents:
             # this will register that the spec mixins where injected in this class
-            cls._map_concrete(cr.dbname, parent, cls._name)
+            cls._map_concrete(pool, parent, cls._name)
         return super()._build_model(pool, cr)
 
     @api.model
@@ -118,7 +129,7 @@ class SpecModel(models.Model):
             if not hasattr(klass, "_is_spec_driven"):
                 continue
             if klass._name != cls._name:
-                cls._map_concrete(self.env.cr.dbname, klass._name, cls._name)
+                cls._map_concrete(self.env.registry, klass._name, cls._name)
                 klass._table = cls._table
 
         stacked_parents = [getattr(x, "_name", None) for x in cls.mro()]
@@ -126,7 +137,7 @@ class SpecModel(models.Model):
             if hasattr(field, "comodel_name") and field.comodel_name:
                 comodel_name = field.comodel_name
                 comodel = self.env[comodel_name]
-                concrete_class = SPEC_MIXIN_MAPPINGS[self.env.cr.dbname].get(
+                concrete_class = _get_spec_mappings(self.env.registry).get(
                     comodel._name
                 )
 
@@ -172,11 +183,10 @@ class SpecModel(models.Model):
         return super()._setup_fields()
 
     @classmethod
-    def _map_concrete(cls, dbname, key, target, quiet=False):
+    def _map_concrete(cls, registry, key, target, quiet=False):
         if not quiet:
             _logger.debug(f"{key} ---> {target}")
-        global SPEC_MIXIN_MAPPINGS
-        SPEC_MIXIN_MAPPINGS[dbname][key] = target
+        _get_spec_mappings(registry)[key] = target
 
     @classmethod
     def spec_module_classes(cls, spec_module):
@@ -287,7 +297,7 @@ class StackedModel(SpecModel):
         """
         if path is None:
             path = stacking_settings["stacking_mixin"].split(".")[-1]
-        cls._map_concrete(env.cr.dbname, node._name, cls._name, quiet=True)
+        cls._map_concrete(env.registry, node._name, cls._name, quiet=True)
         yield "stacked", node, path, None, None
 
         fields = OrderedDict()
@@ -321,7 +331,7 @@ class StackedModel(SpecModel):
             )
             if child is None:  # Not a spec field
                 continue
-            child_concrete = SPEC_MIXIN_MAPPINGS[env.cr.dbname].get(child._name)
+            child_concrete = _get_spec_mappings(env.registry).get(child._name)
             field_path = name.split("_")[1]  # remove schema prefix
 
             if f["type"] == "one2many":
