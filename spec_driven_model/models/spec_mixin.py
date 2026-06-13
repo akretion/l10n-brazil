@@ -87,6 +87,55 @@ class SpecMixin(models.AbstractModel):
 
     def _register_remaining_schema_models_hook(self):
         """
+        Serialize the hook across workers to prevent INSERT collisions
+        on ir_model_data when multiple workers start simultaneously.
+
+        Uses a PostgreSQL advisory lock (pg_try_advisory_lock) — the
+        same mechanism Odoo's ir.cron uses for cron job locking.  We
+        use a non-blocking lock per schema so other workers skip
+        immediately instead of queuing, and different schemas (NFe,
+        CT-e, MDF-e) can register in parallel.
+        """
+        spec_schema, spec_version = self._spec_prefix(split=True)
+        if not spec_schema:
+            return
+
+        load_key = f"_{spec_schema}_register_hook_loaded"
+        if hasattr(self.env.registry, load_key):
+            return  # already done by this registry instance
+
+        cr = self.env.cr
+        # Deterministic lock ID per schema — no collision between
+        # different spec schemas and no magic-number collision risk.
+        lock_id = hash(spec_schema) & 0x7FFFFFFF
+
+        cr.execute("SELECT pg_try_advisory_lock(%s)", [lock_id])
+        acquired = cr.fetchone()[0]
+        if not acquired:
+            # Another worker is already handling this schema — skip.
+            return
+
+        try:
+            # Double-check both the registry (same-process fast path)
+            # and the database (cross-worker safety).
+            if hasattr(self.env.registry, load_key):
+                return
+
+            cr.execute(
+                "SELECT 1 FROM ir_model_data WHERE name LIKE %s LIMIT 1",
+                (f"field_{spec_schema}{spec_version}%",),
+            )
+            if cr.fetchone():
+                # Another worker already created the records.
+                setattr(self.env.registry, load_key, True)
+                return
+
+            self._register_remaining_schema_models_hook_impl()
+        finally:
+            cr.execute("SELECT pg_advisory_unlock(%s)", [lock_id])
+
+    def _register_remaining_schema_models_hook_impl(self):
+        """
         Called once all modules are loaded.
         Here we take all spec models that were not injected into existing concrete
         Odoo models and we make them concrete automatically with
