@@ -6,7 +6,7 @@ from importlib import import_module
 from odoo import api, models
 from odoo.tools import mute_logger
 
-from .spec_models import SPEC_MIXIN_MAPPINGS, SpecModel, StackedModel
+from .spec_models import SpecModel, StackedModel, _get_spec_mappings
 
 
 class SpecMixin(models.AbstractModel):
@@ -42,8 +42,8 @@ class SpecMixin(models.AbstractModel):
     @api.model
     def _get_concrete_model(self, model_name):
         "Lookup for concrete models where abstract schema mixins were injected"
-        if SPEC_MIXIN_MAPPINGS[self.env.cr.dbname].get(model_name) is not None:
-            return self.env[SPEC_MIXIN_MAPPINGS[self.env.cr.dbname].get(model_name)]
+        if _get_spec_mappings(self.env.registry).get(model_name) is not None:
+            return self.env[_get_spec_mappings(self.env.registry).get(model_name)]
         else:
             return self.env.get(model_name)
 
@@ -117,7 +117,7 @@ class SpecMixin(models.AbstractModel):
             i[0]
             for i in self.env.cr.fetchall()
             if self.env.registry.get(i[0])
-            and not SPEC_MIXIN_MAPPINGS[self.env.cr.dbname].get(i[0])
+            and not _get_spec_mappings(self.env.registry).get(i[0])
         }
         spec_module = self._get_spec_property("odoo_module")
         if "_spec." in spec_module:
