@@ -7,6 +7,8 @@ from odoo import fields, models
 class PoXsdMixin(models.AbstractModel):
     _description = "Abstract Model for PO XSD"
     _name = "spec.mixin.poxsd"
+    spec_schema = "poxsd"
+    spec_version = "10"
 
     _poxsd10_odoo_module = "odoo.addons.spec_driven_model.tests.spec_poxsd"
     _poxsd10_binding_module = "odoo.addons.spec_driven_model.tests.purchase_order_lib"
