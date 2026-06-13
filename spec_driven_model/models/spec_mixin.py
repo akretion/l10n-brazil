@@ -1,8 +1,6 @@
 # Copyright 2019-TODAY Akretion - Raphael Valyi <raphael.valyi@akretion.com>
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.en.html).
 
-from importlib import import_module
-
 from odoo import api, models
 from odoo.tools import mute_logger
 
@@ -49,29 +47,29 @@ class SpecMixin(models.AbstractModel):
 
     def _spec_prefix(self, split=False):
         """
-        Get spec_schema and spec_version from context or from class module
+        Get spec_schema and spec_version from context or from
+        class-level attributes on spec mixin ancestors.
         """
-        if self._context.get("spec_schema") and self._context.get("spec_version"):
-            spec_schema = self._context.get("spec_schema")
-            spec_version = self._context.get("spec_version")
-            if spec_schema and spec_version:
-                spec_version = spec_version.replace(".", "")[:2]
-                if split:
-                    return spec_schema, spec_version
-                return f"{spec_schema}{spec_version}"
+        # Runtime context override (e.g., for import/export operations)
+        ctx_schema = self._context.get("spec_schema")
+        ctx_version = self._context.get("spec_version")
+        if ctx_schema and ctx_version:
+            ctx_version = ctx_version.replace(".", "")[:2]
+            if split:
+                return ctx_schema, ctx_version
+            return f"{ctx_schema}{ctx_version}"
 
+        # Look for spec_schema/spec_version class attributes on MRO ancestors
         for ancestor in type(self).mro():
-            if not ancestor.__module__.startswith("odoo.addons."):
-                continue
-            mod = import_module(".".join(ancestor.__module__.split(".")[:-1]))
-            if hasattr(mod, "spec_schema"):
-                spec_schema = mod.spec_schema
-                spec_version = mod.spec_version.replace(".", "")[:2]
+            schema = getattr(ancestor, "spec_schema", None)
+            version = getattr(ancestor, "spec_version", None)
+            if schema and version:
+                spec_version = version.replace(".", "")[:2]
                 if split:
-                    return spec_schema, spec_version
-                return f"{spec_schema}{spec_version}"
+                    return schema, spec_version
+                return f"{schema}{spec_version}"
 
-        return None, None if split else None
+        return (None, None) if split else None
 
     def _get_spec_property(self, spec_property="", fallback=None):
         """
@@ -147,10 +145,6 @@ class SpecMixin(models.AbstractModel):
                     "_module": odoo_module,
                 },
             )
-            # we set _spec_schema and _spec_version because
-            # _build_model will not have context access:
-            model_type._spec_schema = spec_schema
-            model_type._spec_version = spec_version
             models.MetaModel.module_to_models[odoo_module] += [model_type]
 
             # now we init these models properly

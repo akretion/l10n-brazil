@@ -86,11 +86,20 @@ class SpecModel(models.Model):
         class as long as the generated spec mixins inherit from some
         spec.mixin.<schema_name> mixin.
         """
-        if hasattr(cls, "_spec_schema"):  # when called via _register_hook
-            schema = cls._spec_schema
-        else:
-            mod = import_module(".".join(cls.__module__.split(".")[:-1]))
-            schema = mod.spec_schema
+        # Discover schema from class-level spec_schema on MRO ancestors
+        schema = None
+        for kls in cls.mro():
+            schema = getattr(kls, "spec_schema", None)
+            if schema:
+                break
+        # Fallback to module-level spec_schema (needed when FakeModelLoader
+        # creates classes before _inherit chains are fully resolved)
+        if not schema:
+            try:
+                mod = import_module(".".join(cls.__module__.split(".")[:-1]))
+                schema = getattr(mod, "spec_schema", None)
+            except Exception:
+                pass
 
         if schema and "spec.mixin" not in [
             c._name for c in pool[f"spec.mixin.{schema}"].__bases__
@@ -234,13 +243,25 @@ class StackedModel(SpecModel):
 
     @classmethod
     def _build_model(cls, pool, cr):
-        if hasattr(cls, "_spec_schema"):  # when called via _register_hook
-            schema = cls._spec_schema
-            version = cls._spec_version.replace(".", "")[:2]
-        else:
-            mod = import_module(".".join(cls.__module__.split(".")[:-1]))
-            schema = mod.spec_schema
-            version = mod.spec_version.replace(".", "")[:2]
+        # Discover schema/version from class-level attributes on MRO ancestors
+        schema = None
+        version = None
+        for kls in cls.mro():
+            schema = getattr(kls, "spec_schema", None)
+            version = getattr(kls, "spec_version", None)
+            if schema and version:
+                break
+        # Fallback to module-level attributes (needed when FakeModelLoader
+        # creates classes before _inherit chains are fully resolved)
+        if not schema or not version:
+            try:
+                mod = import_module(".".join(cls.__module__.split(".")[:-1]))
+                if not schema:
+                    schema = getattr(mod, "spec_schema", None)
+                if not version:
+                    version = getattr(mod, "spec_version", None)
+            except Exception:
+                pass
         spec_prefix = f"{schema}{version}"
         setattr(cls, f"_{spec_prefix}_stacking_points", {})
         stacking_settings = {
