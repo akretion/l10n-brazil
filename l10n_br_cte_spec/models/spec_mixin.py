@@ -7,6 +7,8 @@ from odoo import fields, models
 class CteSpecMixin(models.AbstractModel):
     _description = "Abstract Model"
     _name = "spec.mixin.cte"
+    spec_schema = "cte"
+    spec_version = "40"
     _field_prefix = "cte40_"
     _cte40_odoo_module = (
         "odoo.addons.l10n_br_cte_spec.models.v4_0.cte_tipos_basico_v4_00"
