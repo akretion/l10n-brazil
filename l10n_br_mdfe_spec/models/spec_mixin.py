@@ -7,6 +7,8 @@ from odoo import fields, models
 class MdfeSpecMixin(models.AbstractModel):
     _description = "Abstract Model"
     _name = "spec.mixin.mdfe"
+    spec_schema = "mdfe"
+    spec_version = "30"
     _mdfe30_odoo_module = (
         "odoo.addons.l10n_br_mdfe_spec.models.v3_0.mdfe_tipos_basico_v3_00"
     )
