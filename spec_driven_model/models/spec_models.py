@@ -4,6 +4,7 @@
 import logging
 import sys
 from collections import OrderedDict
+from importlib import import_module
 from inspect import getmembers, isclass
 
 from odoo import SUPERUSER_ID, _, api, models
@@ -23,6 +24,26 @@ def _get_spec_mappings(registry):
     if not hasattr(registry, "_spec_mixin_mappings"):
         registry._spec_mixin_mappings = {}
     return registry._spec_mixin_mappings
+
+
+def _inject_parent(cls, pool, parent_name):
+    """Dynamically inject a parent class at runtime.
+
+    Used by SpecModel._build_model to inject ``spec.mixin`` as a
+    parent of ``spec.mixin.<schema>`` so that spec modules do not
+    need a hard dependency on spec_driven_model.  Idempotent: if
+    the parent is already present this is a no-op.
+
+    Defined as a standalone function (not a classmethod on SpecMixin)
+    because the target class may not yet have spec.mixin in its MRO
+    at the time of injection (e.g., FakeModelLoader scenarios).
+    """
+    if parent_name in {c._name for c in cls.__bases__}:
+        return  # already injected
+    parent_cls = pool[parent_name]
+    cls._inherit = list(cls._inherit) + [parent_name]
+    cls._BaseModel__base_classes = (parent_cls,) + cls._BaseModel__base_classes
+    cls.__bases__ = (parent_cls,) + cls.__bases__
 
 
 class SelectionMuteLogger(mute_logger):
@@ -94,16 +115,17 @@ class SpecModel(models.Model):
                 schema = getattr(kls, "spec_schema", None)
                 if schema:
                     break
+            # Fallback to module-level spec_schema (needed when FakeModelLoader
+            # creates classes before _inherit chains are fully resolved)
+            if not schema:
+                try:
+                    mod = import_module(".".join(cls.__module__.split(".")[:-1]))
+                    schema = getattr(mod, "spec_schema", None)
+                except Exception:
+                    pass
 
-            if schema and "spec.mixin" not in [
-                c._name for c in pool[f"spec.mixin.{schema}"].__bases__
-            ]:
-                spec_mixin = pool[f"spec.mixin.{schema}"]
-                spec_mixin._inherit = list(spec_mixin._inherit) + ["spec.mixin"]
-                spec_mixin._BaseModel__base_classes = (
-                    pool["spec.mixin"],
-                ) + spec_mixin._BaseModel__base_classes
-                spec_mixin.__bases__ = (pool["spec.mixin"],) + spec_mixin.__bases__
+            if schema:
+                _inject_parent(pool[f"spec.mixin.{schema}"], pool, "spec.mixin")
 
             parents = [
                 item[0] if isinstance(item, list) else item
@@ -253,6 +275,17 @@ class StackedModel(SpecModel):
                 version = getattr(kls, "spec_version", None)
                 if schema and version:
                     break
+            # Fallback to module-level attributes (needed when FakeModelLoader
+            # creates classes before _inherit chains are fully resolved)
+            if not schema or not version:
+                try:
+                    mod = import_module(".".join(cls.__module__.split(".")[:-1]))
+                    if not schema:
+                        schema = getattr(mod, "spec_schema", None)
+                    if not version:
+                        version = getattr(mod, "spec_version", None)
+                except Exception:
+                    pass
             if version:
                 version = version.replace(".", "")[:2]
             spec_prefix = f"{schema}{version}"
