@@ -4,7 +4,6 @@
 import logging
 import sys
 from collections import OrderedDict
-from importlib import import_module
 from inspect import getmembers, isclass
 
 from odoo import SUPERUSER_ID, _, api, models
@@ -89,11 +88,12 @@ class SpecModel(models.Model):
         # In Odoo 18+, the test framework monitors model attribute modifications
         # and logs stack traces. We suppress these during dynamic model building.
         with mute_logger("odoo.tests.common"):
-            if hasattr(cls, "_spec_schema"):  # when called via _register_hook
-                schema = cls._spec_schema
-            else:
-                mod = import_module(".".join(cls.__module__.split(".")[:-1]))
-                schema = mod.spec_schema
+            # Discover schema from class-level spec_schema on MRO ancestors
+            schema = None
+            for kls in cls.mro():
+                schema = getattr(kls, "spec_schema", None)
+                if schema:
+                    break
 
             if schema and "spec.mixin" not in [
                 c._name for c in pool[f"spec.mixin.{schema}"].__bases__
@@ -245,13 +245,16 @@ class StackedModel(SpecModel):
         # In Odoo 18+, the test framework monitors model attribute modifications
         # and logs stack traces. We suppress these during dynamic model building.
         with mute_logger("odoo.tests.common"):
-            if hasattr(cls, "_spec_schema"):  # when called via _register_hook
-                schema = cls._spec_schema
-                version = cls._spec_version.replace(".", "")[:2]
-            else:
-                mod = import_module(".".join(cls.__module__.split(".")[:-1]))
-                schema = mod.spec_schema
-                version = mod.spec_version.replace(".", "")[:2]
+            # Discover schema/version from class-level attributes on MRO ancestors
+            schema = None
+            version = None
+            for kls in cls.mro():
+                schema = getattr(kls, "spec_schema", None)
+                version = getattr(kls, "spec_version", None)
+                if schema and version:
+                    break
+            if version:
+                version = version.replace(".", "")[:2]
             spec_prefix = f"{schema}{version}"
             setattr(cls, f"_{spec_prefix}_stacking_points", {})
         stacking_settings = {
