@@ -51,8 +51,8 @@ class SpecMixin(models.AbstractModel):
         class-level attributes on spec mixin ancestors.
         """
         # Runtime context override (e.g., for import/export operations)
-        ctx_schema = self._context.get("spec_schema")
-        ctx_version = self._context.get("spec_version")
+        ctx_schema = self.env.context.get("spec_schema")
+        ctx_version = self.env.context.get("spec_version")
         if ctx_schema and ctx_version:
             ctx_version = ctx_version.replace(".", "")[:2]
             if split:

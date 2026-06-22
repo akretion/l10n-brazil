@@ -7,7 +7,10 @@ from lxml import etree
 from lxml.builder import E
 
 from odoo import api, models
-from odoo.osv.orm import setup_modifiers
+# NOTE: spec_view.py is not loaded in __init__.py (commented out).
+# setup_modifiers was removed in Odoo 19.0; if spec_view is re-enabled,
+# use lxml modifiers handling directly.
+# from odoo.osv.orm import setup_modifiers  # FIXME Odoo 19.0
 
 _logger = logging.getLogger(__name__)
 
@@ -26,7 +29,7 @@ class SpecViewMixin(models.AbstractModel):
             view_id, view_type, toolbar
         )
         # _logger.info("+++++++++++++++", self, type(self), self._context)
-        if self._context.get("no_subcall"):
+        if self.env.context.get("no_subcall"):
             return res
         # TODO collect class ancestors of StackedModel kind and
         # extract the different XSD schemas injected. Then add a tab/page
@@ -118,7 +121,7 @@ class SpecViewMixin(models.AbstractModel):
                     continue
                 # the following filter to fields to show
                 # when several XSD class are injected in the same object
-                if self._context.get("spec_class") and c != self._context["spec_class"]:
+                if self.env.context.get("spec_class") and c != self.env.context["spec_class"]:
                     continue
                 lib_model = self.env[c]
                 short_desc = lib_model._description.splitlines()[0]
