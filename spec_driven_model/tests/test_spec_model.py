@@ -3,10 +3,7 @@
 # pylint: disable=reimported
 
 import logging
-
 from unittest.mock import patch
-
-from odoo.tools import mute_logger
 
 from odoo_test_helper import FakeModelLoader
 
