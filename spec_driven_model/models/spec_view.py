@@ -7,10 +7,7 @@ from lxml import etree
 from lxml.builder import E
 
 from odoo import api, models
-# NOTE: spec_view.py is not loaded in __init__.py (commented out).
-# setup_modifiers was removed in Odoo 19.0; if spec_view is re-enabled,
-# use lxml modifiers handling directly.
-# from odoo.osv.orm import setup_modifiers  # FIXME Odoo 19.0
+from odoo.osv.orm import setup_modifiers
 
 _logger = logging.getLogger(__name__)
 
@@ -28,7 +25,7 @@ class SpecViewMixin(models.AbstractModel):
         res = super(SpecViewMixin, self.with_context(no_subcall=True)).fields_view_get(
             view_id, view_type, toolbar
         )
-        # _logger.info("+++++++++++++++", self, type(self), self._context)
+        # _logger.info("+++++++++++++++", self, type(self), self.env.context)
         if self.env.context.get("no_subcall"):
             return res
         # TODO collect class ancestors of StackedModel kind and
