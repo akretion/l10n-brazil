@@ -250,10 +250,9 @@ class SpecModel(models.Model):
 
     @classmethod
     def _map_concrete(cls, registry, key, target, quiet=False):
-        _logger.info("_map_concrete: %s -> %s (quiet=%s)", key, target, quiet)
-        mappings = _get_spec_mappings(registry)
-        _logger.info("  registry id=%s, mappings id=%s, current=%s", id(registry), id(mappings), dict(mappings))
-        mappings[key] = target
+        if not quiet:
+            _logger.debug(f"{key} ---> {target}")
+        _get_spec_mappings(registry)[key] = target
 
     @classmethod
     def spec_module_classes(cls, spec_module):
@@ -443,18 +442,11 @@ class StackedModel(SpecModel):
                 for stack_path in stacking_settings.get("stacking_force_paths", [])
             )
 
-            _logger.info(
-                "_visit_stack field=%s comodel=%s child_concrete=%s cls._name=%s xsd_req=%s force=%s",
-                name, f["comodel_name"], child_concrete, cls._name,
-                f.get("xsd_required"), force_stacked
-            )
-
             # many2one
             if (child_concrete is None or child_concrete == cls._name) and (
                 f["xsd_required"] or f["xsd_choice_required"] or force_stacked
             ):
                 # then we will STACK the child in the current class
-                _logger.info("STACKING %s (%s) child_concrete=%s cls._name=%s", name, child._name, child_concrete, cls._name)
                 with mute_logger("odoo.tests.common"):
                     child._stack_path = path
                 child_path = f"{path}.{field_path}"
