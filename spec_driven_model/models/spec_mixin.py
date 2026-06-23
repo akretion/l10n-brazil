@@ -197,13 +197,12 @@ class SpecMixin(models.AbstractModel):
             models.MetaModel.module_to_models[odoo_module] += [model_type]
 
             # now we init these models properly
-            # a bit like odoo.modules.loading#load_module_graph would do
-            model = model_type._build_model(self.env.registry, self.env.cr)
+            # In Odoo 19, _build_model was removed. We use add_to_registry
+            # then _setup_models__ to set up the model.
+            from odoo.orm.model_classes import add_to_registry
 
-            self.env[name]._prepare_setup()
-            self.env[name]._setup_base()
-            self.env[name]._setup_fields()
-            self.env[name]._setup_complete()
+            model_cls = add_to_registry(self.env.registry, model_type)
+            model_cls._spec_build_model(self.env.registry, self.env.cr)
 
             access_fields = [
                 "id",
@@ -215,12 +214,17 @@ class SpecMixin(models.AbstractModel):
                 "perm_create",
                 "perm_unlink",
             ]
-            model._auto_fill_access_data(self.env, odoo_module, access_data)
+            model_cls._auto_fill_access_data(self.env, odoo_module, access_data)
 
         self.env["ir.model.access"].load(access_fields, access_data)
-        self.env.registry.init_models(
-            self.env.cr, remaining_models, {"module": odoo_module}
-        )
+        # Set up and init the remaining models
+        if remaining_models:
+            self.env.registry._setup_models__(
+                self.env.cr, list(remaining_models)
+            )
+            self.env.registry.init_models(
+                self.env.cr, list(remaining_models), {"module": odoo_module}
+            )
 
         # init_models just created ir.model.data records for the "MAGIC FIELDS"
         # of the remaining_models. If we let these fields, next Odoo update
