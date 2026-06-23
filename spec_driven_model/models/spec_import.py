@@ -239,8 +239,17 @@ class SpecMixinImport(models.AbstractModel):
 
     @api.model
     def _build_many2one(self, comodel, vals, comodel_vals, key, value, path):
-        if comodel._name == self._name:
-            # stacked m2o
+        stacked = comodel._name == self._name
+        # Also check for stacking via spec mappings:
+        # if the comodel's spec model is stacked into this model
+        if not stacked:
+            from odoo.addons.spec_driven_model.models.spec_models import (
+                _get_spec_mappings,
+            )
+            mappings = _get_spec_mappings(self.env.registry)
+            stacked = mappings.get(comodel._name) == self._name
+        if stacked:
+            # stacked m2o: unpack child values directly
             vals.update(comodel_vals)
         else:
             vals[key] = comodel.match_or_create_m2o(comodel_vals, vals)
