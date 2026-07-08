@@ -71,7 +71,9 @@ class NFeImportTest(TransactionCase):
             del line["id"]
             del line["product_id"]
             del line["ncm_internal"]
-            del line["cfop_warning"]
+            line.pop("cfop_warning", None)
+            line.pop("icms_redbc_percent", None)
+            line.pop("tax_warning", None)
         self.assertEqual(len(lines), 4)
         self.assertDictEqual(
             lines[0],

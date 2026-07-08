@@ -115,6 +115,7 @@ class DocumentImportWizard(models.TransientModel):
             "product_id": product_id and product_id.id or False,
             "icms_percent": taxes["pICMS"],
             "icms_value": taxes["vICMS"],
+            "icms_redbc_percent": taxes["pRedBC"],
             "ipi_percent": taxes["pIPI"],
             "ipi_value": taxes["vIPI"],
             "uom_internal": uom_id.id,
@@ -172,6 +173,7 @@ class DocumentImportWizard(models.TransientModel):
         pICMS = 0
         pIPI = 0
         vIPI = 0
+        pRedBC = 0
         icms_tags = [tag for tag in dir(product.imposto.ICMS) if tag.startswith("ICMS")]
         for tag in icms_tags:
             if getattr(product.imposto.ICMS, tag) is not None:
@@ -180,6 +182,8 @@ class DocumentImportWizard(models.TransientModel):
             pICMS = icms_choice.pICMS
         if hasattr(icms_choice, "vICMS"):
             vICMS = icms_choice.vICMS
+        if getattr(icms_choice, "pRedBC", None):
+            pRedBC = icms_choice.pRedBC
         if hasattr(product.imposto.IPI, "IPITrib"):
             ipi_trib = product.imposto.IPI.IPITrib
             if hasattr(ipi_trib, "pIPI"):
@@ -187,7 +191,13 @@ class DocumentImportWizard(models.TransientModel):
             if hasattr(ipi_trib, "vIPI"):
                 vIPI = ipi_trib.vIPI
 
-        return {"vICMS": vICMS, "pICMS": pICMS, "vIPI": vIPI, "pIPI": pIPI}
+        return {
+            "vICMS": vICMS,
+            "pICMS": pICMS,
+            "vIPI": vIPI,
+            "pIPI": pIPI,
+            "pRedBC": pRedBC,
+        }
 
     def _create_edoc_from_file(self):
         if self.document_type == MODELO_FISCAL_NFE:
@@ -266,9 +276,31 @@ class DocumentImportWizardLine(models.TransientModel):
 
     icms_value = fields.Char(string="ICMS Value")
 
+    icms_redbc_percent = fields.Float(string="ICMS Base Reduction %")
+
     ipi_percent = fields.Char(string="Alíquota IPI")
 
     ipi_value = fields.Char(string="IPI Value")
+
+    tax_warning = fields.Char(
+        compute="_compute_tax_warning",
+        string="Tax Alert",
+        help="Warns when the XML declares an ICMS base reduction so the user "
+        "can check that the matched product's tax setup models it (otherwise "
+        "the recomputed ICMS credit would not match the NFe / SPED).",
+    )
+
+    @api.depends("icms_redbc_percent")
+    def _compute_tax_warning(self):
+        for line in self:
+            if line.icms_redbc_percent:
+                line.tax_warning = _(
+                    "XML declares an ICMS base reduction of %.2f%%. Make sure "
+                    "the product's ICMS tax models it, or the imported credit "
+                    "will not match the NFe."
+                ) % (line.icms_redbc_percent,)
+            else:
+                line.tax_warning = False
 
     def _prepare_supplierinfo_vals(self):
         vals = super()._prepare_supplierinfo_vals()

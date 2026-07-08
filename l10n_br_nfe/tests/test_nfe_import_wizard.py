@@ -259,3 +259,15 @@ class NFeImportWizardTest(TransactionCase):
         line.cfop_xml = "6101"
         line._compute_cfop_warning()
         self.assertFalse(line.cfop_warning)
+
+    def test_tax_warning(self):
+        """The wizard line flags an ICMS base reduction declared in the XML."""
+        line = self.env["l10n_br_fiscal.document.import.wizard.line"].create({})
+
+        # no reduction -> no warning
+        line.icms_redbc_percent = 0
+        self.assertFalse(line.tax_warning)
+
+        # base reduction declared -> warning
+        line.icms_redbc_percent = 33.33
+        self.assertTrue(line.tax_warning)

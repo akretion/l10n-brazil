@@ -60,6 +60,11 @@
                 />
                 <field name="icms_percent" readonly="1" />
                 <field name="icms_value" readonly="1" />
+                <field
+                    name="tax_warning"
+                    readonly="1"
+                    decoration-warning="tax_warning != False"
+                />
                 <field name="ipi_percent" readonly="1" />
                 <field name="ipi_value" readonly="1" />
                 <field name="quantity_com" readonly="1" />
