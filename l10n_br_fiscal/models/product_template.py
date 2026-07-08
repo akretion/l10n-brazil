@@ -1,7 +1,9 @@
 # Copyright (C) 2013  Renato Lima - Akretion <renato.lima@akretion.com.br>
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
-from odoo import fields, models
+from lxml import etree
+
+from odoo import api, fields, models
 
 from ..constants.fiscal import (
     NCM_FOR_SERVICE_REF,
@@ -134,3 +136,23 @@ class ProductTemplate(models.Model):
     uot_id = fields.Many2one(comodel_name="uom.uom", string="Tax UoM")
 
     uot_factor = fields.Float(string="Tax UoM Factor")
+
+    @api.model
+    def _get_view(self, view_id=None, view_type="form", **options):
+        """Surface the supplierinfo de-para in the Fiscal tab.
+
+        The NFe import wizard stores the supplier UoM de-para
+        (partner_uom_id / partner_uom_factor) on product.supplierinfo.
+        Those records are only exposed on the product form by the
+        ``purchase`` module (Purchase tab). To keep ``purchase`` a soft
+        dependency, inject ``seller_ids`` into our Fiscal tab only when
+        ``purchase`` is not installed; otherwise the Purchase tab handles
+        it and we avoid duplicating the field.
+        """
+        arch, view = super()._get_view(view_id=view_id, view_type=view_type, **options)
+        if view_type == "form" and not self._fields.get("purchase_method"):
+            fiscal_page = arch.xpath("//page[@name='fiscal']")
+            if fiscal_page:
+                group = etree.SubElement(fiscal_page[0], "group", {"string": "Vendors"})
+                etree.SubElement(group, "field", {"name": "seller_ids", "nolabel": "1"})
+        return arch, view
