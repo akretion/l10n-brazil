@@ -1418,8 +1418,7 @@ class NFe(spec_models.StackedModel):
 
     def _document_status(self):
         self.ensure_one()
-        # status = super()._document_status() # Not implemented in base
-        status = None
+        status = super()._document_status()
         if filter_processador_edoc_nfe(self):
             status = self.check_nfe_status_in_sefaz()
         return status

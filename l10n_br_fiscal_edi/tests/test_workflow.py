@@ -1,6 +1,8 @@
 # Copyright (C) 2020  KMEE INFORMATICA LTDA
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
+from unittest.mock import patch
+
 from odoo.exceptions import UserError
 from odoo.tests import TransactionCase
 
@@ -140,3 +142,51 @@ class TestWorkflow(TransactionCase):
             self.fiscal_document.state_edoc,
             DOCUMENT_STATE_OPEN,
         )
+
+    def test_correction_wizard(self):
+        """The correction wizard flow must work end to end.
+
+        Regression test: the wizard calls _document_correction(), which was
+        dropped together with the legacy workflow mixin (as well as the
+        correction_reason field), breaking the Correction (CC-e) flow with
+        an AttributeError.
+        """
+        self.fiscal_document.document_electronic = True
+        self.fiscal_document.action_document_confirm()
+        self.fiscal_document.action_document_send()
+        self.assertEqual(self.fiscal_document.state_edoc, DOCUMENT_STATE_AUTHORIZED)
+
+        action = self.fiscal_document.action_document_correction()
+        self.assertEqual(
+            action["res_model"], "l10n_br_fiscal.document.correction.wizard"
+        )
+        wizard = self.env["l10n_br_fiscal.document.correction.wizard"].create(
+            {
+                "document_id": self.fiscal_document.id,
+                "justification": "Correction of additional data",
+            }
+        )
+        wizard.doit()
+        self.assertEqual(
+            self.fiscal_document.correction_reason, "Correction of additional data"
+        )
+
+    def test_transmission_hooks_exist(self):
+        """Hooks called with super() by transmission modules (l10n_br_nfe,
+        l10n_br_cte, l10n_br_mdfe, l10n_br_nfse_focus) and by the document
+        status wizard are part of the stable API and must exist on the base
+        EDI document."""
+        self.assertIsNone(self.fiscal_document._document_status())
+        self.assertIsNone(self.fiscal_document._edoc_processor())
+        self.assertIsNone(self.fiscal_document._validate_xml("<xml/>"))
+        self.assertFalse(self.fiscal_document._direct_draft_send())
+
+    def test_direct_draft_send(self):
+        """Documents whose _direct_draft_send() returns True must be sent
+        right after confirmation (POS/NFC-e style flow)."""
+        self.fiscal_document.document_electronic = True
+        with patch.object(
+            type(self.fiscal_document), "_direct_draft_send", return_value=True
+        ):
+            self.fiscal_document.action_document_confirm()
+        self.assertEqual(self.fiscal_document.state_edoc, DOCUMENT_STATE_AUTHORIZED)

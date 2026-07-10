@@ -166,6 +166,8 @@ class Document(models.Model):
 
     cancel_reason = fields.Char()
 
+    correction_reason = fields.Char()
+
     # Invalidate Event Related Fields
     invalidate_event_id = fields.Many2one(
         comodel_name="l10n_br_fiscal.event",
@@ -332,6 +334,12 @@ class Document(models.Model):
             self.cancel_reason = justificative
         self._trigger_fsm("action_cancel_fsm")
 
+    def _document_correction(self, justificative):
+        """Record the correction reason. Specific document modules override
+        this method to transmit the correction event (CC-e)."""
+        self.ensure_one()
+        self.correction_reason = justificative
+
     # -------------------------------------------------------------------------
     # Transition Callbacks
     # -------------------------------------------------------------------------
@@ -461,6 +469,33 @@ class Document(models.Model):
     def _document_export(self, **kwargs):
         pass
 
+    def _document_status(self):
+        """Return the document status as text and, when needed, update the
+        document status. Hook meant to be overridden by transmission modules
+        (l10n_br_nfe, l10n_br_nfse_focus...)."""
+        return None
+
+    def _edoc_processor(self):
+        """Hook meant to return the erpbrasil.edoc processor of the document.
+        Overridden by transmission modules."""
+        return None
+
+    def _document_qrcode(self):
+        """Hook meant to compute the document QR Code (NFC-e, CT-e...).
+        Overridden by transmission modules."""
+        pass
+
+    def _validate_xml(self, xml_file):
+        """Hook meant to validate the document XML against its schema.
+        Overridden by transmission modules."""
+        pass
+
+    def _direct_draft_send(self):
+        """When it returns True, the document is sent right after being
+        confirmed (draft -> open -> sending in a single action). Meant to be
+        overridden by modules such as POS/NFC-e ones."""
+        return False
+
     def serialize(self):
         """
         Serialize the document to a list of EDocs (objects from erpbrasil.edoc).
@@ -539,6 +574,8 @@ class Document(models.Model):
         )
         if to_validate:
             to_validate._trigger_fsm("action_validate")
+            for doc in to_validate.filtered(lambda d: d._direct_draft_send()):
+                doc.action_document_send()
 
         others = self - electronic_company
         if others:
