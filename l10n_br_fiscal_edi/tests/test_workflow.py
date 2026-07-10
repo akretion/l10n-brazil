@@ -181,6 +181,19 @@ class TestWorkflow(TransactionCase):
         self.assertIsNone(self.fiscal_document._validate_xml("<xml/>"))
         self.assertFalse(self.fiscal_document._direct_draft_send())
 
+    def test_after_authorize_hook_called(self):
+        """The action_authorize transition must fire the
+        _after_document_authorize callback (transmission modules rely on it,
+        e.g. l10n_br_nfe generates the DANFE there)."""
+        self.fiscal_document.document_electronic = True
+        self.fiscal_document.action_document_confirm()
+        with patch.object(
+            type(self.fiscal_document), "_after_document_authorize"
+        ) as hook:
+            self.fiscal_document.action_document_send()
+        self.assertEqual(self.fiscal_document.state_edoc, DOCUMENT_STATE_AUTHORIZED)
+        hook.assert_called()
+
     def test_direct_draft_send(self):
         """Documents whose _direct_draft_send() returns True must be sent
         right after confirmation (POS/NFC-e style flow)."""
