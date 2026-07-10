@@ -9,6 +9,7 @@ from odoo.tests import TransactionCase
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     DOCUMENT_STATE_CANCEL,
     DOCUMENT_STATE_DRAFT,
+    DOCUMENT_STATE_INVALIDATED,
     DOCUMENT_STATE_OPEN,
 )
 from odoo.addons.l10n_br_fiscal_edi.constants.fiscal import (
@@ -180,6 +181,34 @@ class TestWorkflow(TransactionCase):
         self.assertIsNone(self.fiscal_document._edoc_processor())
         self.assertIsNone(self.fiscal_document._validate_xml("<xml/>"))
         self.assertFalse(self.fiscal_document._direct_draft_send())
+
+    def test_cancel_on_invalidated_document(self):
+        """'inutilizada' is a valid state_edoc value: cancelling such a
+        document must be a no-op and any other trigger must raise a
+        UserError — not a raw ValueError while building the state machine,
+        which knew nothing about this state."""
+        self.fiscal_document.document_electronic = True
+        self.fiscal_document.state_edoc = DOCUMENT_STATE_INVALIDATED
+
+        self.fiscal_document.action_document_cancel()
+        self.assertEqual(self.fiscal_document.state_edoc, DOCUMENT_STATE_INVALIDATED)
+
+        with self.assertRaises(UserError):
+            self.fiscal_document.action_document_send()
+
+    def test_dashboard_counts_authorized(self):
+        """The operation dashboard 'authorized' counter must count
+        authorized documents, not merely confirmed (open) ones."""
+        operation = self.env.ref("l10n_br_fiscal.fo_venda")
+        self.fiscal_document.fiscal_operation_id = operation
+        self.fiscal_document.document_electronic = True
+
+        self.fiscal_document.action_document_confirm()
+        before = operation.get_operation_dashboard_data()["number_authorized"]
+
+        self.fiscal_document.action_document_send()
+        after = operation.get_operation_dashboard_data()["number_authorized"]
+        self.assertEqual(after, before + 1)
 
     def test_operation_comments_copied_on_confirm(self):
         """Comments configured on the fiscal operation must be copied to the

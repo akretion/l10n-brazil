@@ -13,6 +13,7 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     DOCUMENT_ISSUER_COMPANY,
     DOCUMENT_STATE_CANCEL,
     DOCUMENT_STATE_DRAFT,
+    DOCUMENT_STATE_INVALIDATED,
     DOCUMENT_STATE_OPEN,
     MODELO_FISCAL_CTE,
     MODELO_FISCAL_MDFE,
@@ -242,6 +243,10 @@ class Document(models.Model):
                 DOCUMENT_STATE_REJECTED,
                 DOCUMENT_STATE_DENIED,
                 DOCUMENT_STATE_CANCEL,
+                # Terminal state (no outgoing transition), but it must be
+                # known to the machine: building it with an unknown initial
+                # state raises ValueError.
+                DOCUMENT_STATE_INVALIDATED,
             ],
             "transitions": [
                 # Validate: Draft -> Open
@@ -613,7 +618,11 @@ class Document(models.Model):
 
     def action_document_cancel(self):
         """Override base button"""
-        if self.state_edoc in (DOCUMENT_STATE_CANCEL, DOCUMENT_STATE_DENIED):
+        if self.state_edoc in (
+            DOCUMENT_STATE_CANCEL,
+            DOCUMENT_STATE_DENIED,
+            DOCUMENT_STATE_INVALIDATED,
+        ):
             return True
 
         if self.document_electronic and self.issuer == DOCUMENT_ISSUER_COMPANY:
