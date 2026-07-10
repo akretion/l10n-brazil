@@ -181,6 +181,29 @@ class TestWorkflow(TransactionCase):
         self.assertIsNone(self.fiscal_document._validate_xml("<xml/>"))
         self.assertFalse(self.fiscal_document._direct_draft_send())
 
+    def test_operation_comments_copied_on_confirm(self):
+        """Comments configured on the fiscal operation must be copied to the
+        document upon confirmation.
+
+        Regression test: this was done by the legacy _document_confirm(),
+        dropped by the FSM refactor without replacement, so documents were
+        confirmed with empty additional data.
+        """
+        comment = self.env["l10n_br_fiscal.comment"].create(
+            {
+                "name": "Operation comment",
+                "comment": "Goods sold under fiscal benefit",
+                "comment_type": "fiscal",
+                "object": "l10n_br_fiscal.document.mixin",
+            }
+        )
+        operation = self.env.ref("l10n_br_fiscal.fo_venda")
+        operation.comment_ids |= comment
+        self.fiscal_document.document_electronic = True
+        self.fiscal_document.fiscal_operation_id = operation
+        self.fiscal_document.action_document_confirm()
+        self.assertIn(comment, self.fiscal_document.comment_ids)
+
     def test_after_authorize_hook_called(self):
         """The action_authorize transition must fire the
         _after_document_authorize callback (transmission modules rely on it,
