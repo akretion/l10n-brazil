@@ -1366,28 +1366,10 @@ class TestL10nBrNfseFocus(common.TransactionCase):
             "odoo.addons.l10n_br_nfse_focus.models.document"
             ".Document._process_error_status"
         ) as mock_process:
-            with patch(
-                "odoo.addons.l10n_br_fiscal_edi.models.document.Document._trigger_fsm"
-            ):
-                result = document._process_status_nacional(document)
+            result = document._process_status_nacional(document)
 
-                self.assertIn("erro_autorizacao", result)
-                mock_process.assert_called_once()
-                # _process_error_status calls _trigger_fsm("action_reject"),
-                # but here we mock _process_error_status
-                # so _trigger_fsm is NOT called by _process_error_status.
-                # But does _process_status_nacional call _change_state?
-                # _process_status_nacional calls _process_error_status
-                # which calls _change_state.
-                # Since we mock _process_error_status, _change_state won't be called.
-                # So we don't need to assert mock_trigger_fsm called?
-                # The original test asserted mock_change_state NOT called?
-                # Wait, the original code had:
-                # with patch(..._change_state):
-                #     result = ...
-                #     mock_process.assert_called_once()
-                # It didn't assert mock_change_state.assert_called_once().
-                # So I can just replace the patch.
+            self.assertIn("erro_autorizacao", result)
+            mock_process.assert_called_once()
 
     @patch(
         "odoo.addons.l10n_br_nfse_focus.models.nfse_nacional"

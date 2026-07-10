@@ -469,12 +469,9 @@ class Document(models.Model):
             lambda d: not d.document_electronic
             or not d.issuer == DOCUMENT_ISSUER_COMPANY
         )
-        # Non-electronic/Partner issuer docs just go to Authorized immediately
+        # Non-electronic/partner-issued docs go straight to Authorized:
+        # there is nothing to transmit.
         for doc in no_electronic:
-            # We bypass the FSM trigger loop to avoid recursion if called
-            # from transition
-            # But wait, we are in 'after_document_send', state is 'sending'.
-            # We should move them to 'authorized'.
             doc._trigger_fsm("action_authorize")
 
         electronic = self - no_electronic

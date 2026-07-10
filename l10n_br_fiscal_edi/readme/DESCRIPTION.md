@@ -32,5 +32,4 @@ Workflow de Estados
 O diagrama abaixo ilustra os estados e transições padrão definidos no módulo
 base (a configuração pode ser estendida/sobrescrita por módulos filhos):
 
-.. image:: ../static/description/fsm_graph.png
-   :alt: FSM state diagram
+![FSM state diagram](static/description/fsm_graph.png)
