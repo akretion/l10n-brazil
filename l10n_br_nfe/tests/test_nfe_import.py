@@ -137,7 +137,6 @@ class NFeImportTest(TransactionCase):
         self.assertTrue(shipping, "delivery address was not imported")
         self.assertNotEqual(shipping, nfe.partner_id)
         self.assertEqual(shipping.type, "delivery")
-        shipping._inverse_nfe40_CEP()
         self.assertEqual(shipping.street_name, "Rua da Entrega")
         self.assertEqual(shipping.zip, "01001-000")
 
