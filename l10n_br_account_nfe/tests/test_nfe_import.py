@@ -64,7 +64,6 @@ class NFeImportTest(TransactionCase):
         with Form(wizard) as import_form:
             import_form.file = base64.b64encode(file_content)
             import_form.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
-            # self.assertEqual(import_form.issuer_name, "FORNECEDER NFE DEMO LTDA")
             lines = import_form.imported_products_ids._records
         for line in lines:  # ensure testing consistency
             del line["id"]
@@ -155,6 +154,15 @@ class NFeImportTest(TransactionCase):
         action = wizard.action_import_and_open_move()
         move = self.env["account.move"].browse(action["res_id"])
 
+        self.assertEqual(move.partner_id.name, "FORNECEDER NFE DEMO LTDA")
+        self.assertEqual(move.partner_id.vat, "04.712.500/0001-07")
+        self.assertEqual(move.partner_id.l10n_br_ie_code, "078016350838")
+        self.assertEqual(
+            move.document_type_id, self.env.ref("l10n_br_fiscal.document_55")
+        )
+        self.assertEqual(
+            move.fiscal_operation_id, self.env.ref("l10n_br_fiscal.fo_compras")
+        )
         self.assertEqual(move.document_number, "66106")
         self.assertEqual(
             move.document_key, "35231149647316000169550010000661061151600085"
