@@ -780,8 +780,4 @@ class AccountMove(models.Model):
         if dummy_lines_to_unlink:
             dummy_lines_to_unlink.unlink()
 
-        # Recompute totals officially now that all lines are bound
-        # and tax_totals override is safely popped!
-        move.with_context(check_move_validity=True)._compute_amount()
-
         return move_form
