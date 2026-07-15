@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+  Copyright 2020-TODAY Akretion (http://www.akretion.com/)
+  @author: Renato Lima <renato.lima@akretion.com.br>
+  @author: Raphael Valyi <raphael.valyi@akretion.com.br>
+  License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+-->
+<odoo>
+    <!-- Fiscal Invoice Search View -->
+    <record id="fiscal_invoice_search" model="ir.ui.view">
+        <field name="name">l10n_br_account_fiscal_invoice.search</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="l10n_br_fiscal.document_search" />
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='document_number']" position="after">
+                <field name="name" string="Account Number" />
+                <field name="partner_legal_name" string="Legal Name" />
+                <field name="partner_cnpj_cpf" string="CNPJ/CPF" />
+                <field name="partner_l10n_br_ie_code" string="State Tax Number" />
+            </xpath>
+            <xpath expr="//filter[@name='draft']" position="attributes">
+                <attribute name="domain">[('state', '=', 'draft')]</attribute>
+            </xpath>
+            <xpath expr="//filter[@name='draft']" position="after">
+                <separator />
+                <filter
+                    name="multi_document"
+                    string="Multiple Documents"
+                    domain="[('fiscal_document_count', '>', 1)]"
+                />
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Fiscal Invoice Tree View -->
+    <record id="fiscal_invoice_tree" model="ir.ui.view">
+        <field name="name">l10n_br_account_fiscal_invoice.tree</field>
+        <field name="model">account.move</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="company_id" groups="base.group_multi_company" />
+                <field name="document_type_id" />
+                <field name="document_serie_id" optional="hide" />
+                <field name="document_number" />
+                <field
+                    name="fiscal_document_count"
+                    string="Docs"
+                    widget="badge"
+                    decoration-warning="fiscal_document_count > 1"
+                    optional="show"
+                />
+                <field name="document_date" />
+                <field name="fiscal_operation_id" optional="hide" />
+                <field name="partner_id" />
+                <field name="amount_untaxed" string="Untaxed" />
+                <field name="amount_tax" string="Tax" />
+                <field name="amount_total" />
+                <field name="state" column_invisible="True" />
+                <field
+                    name="state_edoc"
+                    widget="badge"
+                    decoration-success="state_edoc == 'autorizada'"
+                    decoration-info="state_edoc == 'a_enviar'"
+                    decoration-warning="state_edoc == 'cancelada'"
+                    decoration-danger="state_edoc == 'rejeitada'"
+                    optional="show"
+                />
+                <field name="invoice_date" optional="show" />
+                <field name="name" string="Account Number" optional="hide" />
+                <field name="move_type" optional="hide" />
+                <field name="currency_id" optional="hide" />
+            </list>
+        </field>
+    </record>
+
+    <!-- Fiscal Invoice Form View (the "camouflage") -->
+    <record id="fiscal_invoice_form" model="ir.ui.view">
+        <field name="name">l10n_br_account_fiscal_invoice.form</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="l10n_br_fiscal.document_form" />
+        <field name="mode">primary</field>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <!-- Add account.move specific invisible fields to header -->
+            <xpath expr="//header" position="inside">
+                <field name="state" invisible="1" />
+                <field name="suitable_journal_ids" invisible="1" />
+                <field name="fiscal_document_id" required="0" invisible="1" />
+                <field name="move_type" invisible="1" />
+            </xpath>
+
+            <!-- Replace confirm button with account.move post button -->
+            <xpath expr="//button[@name='action_document_confirm']" position="replace">
+                <button
+                    name="action_post"
+                    type="object"
+                    string="Validate"
+                    class="oe_highlight o_invoice_validate"
+                    groups="account.group_account_invoice"
+                    invisible="state != 'draft'"
+                />
+            </xpath>
+
+            <!-- Replace back2draft button (use account.move method) -->
+            <xpath
+                expr="//button[@name='action_document_back2draft']"
+                position="replace"
+            >
+                <button
+                    name="action_document_back2draft"
+                    type="object"
+                    string="Voltar para Em Digitacao"
+                    groups="l10n_br_fiscal.group_user"
+                    class="btn-secondary"
+                    invisible="state_edoc not in ('a_enviar', 'enviada', 'rejeitada') or not document_electronic"
+                />
+            </xpath>
+
+            <!-- Replace return button with credit note action -->
+            <xpath expr="//button[@name='action_create_return']" position="replace">
+                <button
+                    name="%(account.action_move_out_refund_type)d"
+                    type="action"
+                    string="Devolver"
+                    groups="account.group_account_invoice"
+                    invisible="move_type in ('in_refund', 'out_refund') or state not in ('posted',)"
+                />
+            </xpath>
+
+            <!-- Add account.move fields to the finance page -->
+            <xpath expr="//page[@name='finance']" position="inside">
+                <field name="name" invisible="1" />
+                <field name="move_type" invisible="1" />
+                <field name="journal_id" />
+                <field name="invoice_date" />
+                <field name="invoice_date_due" />
+                <field name="invoice_payment_term_id" />
+                <field name="amount_untaxed" />
+                <field name="amount_tax" />
+                <field name="amount_total" />
+                <field name="amount_residual" />
+            </xpath>
+
+            <!-- Replace fiscal_line_ids with invoice_line_ids -->
+            <xpath expr="//field[@name='fiscal_line_ids']" position="replace">
+                <field
+                    name="invoice_line_ids"
+                    context="{
+                        'form_view_ref': 'l10n_br_account_fiscal_invoice.fiscal_invoice_line_form',
+                        'default_move_type': context.get('default_move_type'),
+                        'journal_id': journal_id,
+                        'default_document_id': fiscal_document_id,
+                        'default_company_id': company_id,
+                        'default_partner_id': partner_id,
+                        'default_proxy_partner_id': partner_id,
+                        'default_proxy_company_id': company_id,
+                        'default_currency_id': currency_id or company_currency_id,
+                        'default_fiscal_operation_type': fiscal_operation_type,
+                        'default_fiscal_operation_id': fiscal_operation_id,
+                        'default_ind_final': ind_final,
+                        'default_document_type_id': document_type_id,
+                        'no_subcall': True,
+                    }"
+                >
+                    <list>
+                        <field name="product_id" />
+                        <field name="name" />
+                        <field name="product_uom_id" />
+                        <field name="price_unit" />
+                        <field name="quantity" />
+                        <field
+                            name="document_id"
+                            string="Fiscal Document"
+                            optional="show"
+                        />
+                        <field name="fiscal_tax_ids" widget="many2many_tags" />
+                        <field name="fiscal_amount_total" sum="Total" />
+                    </list>
+                </field>
+            </xpath>
+
+            <!-- Add the Documents smart button when multiple fiscal docs exist -->
+            <xpath expr="//div[hasclass('oe_button_box')]" position="inside">
+                <button
+                    class="oe_stat_button"
+                    name="action_view_fiscal_documents"
+                    type="object"
+                    help="Show related fiscal documents"
+                    invisible="fiscal_document_count &lt;= 1"
+                    icon="fa-pencil-square-o"
+                >
+                    <field
+                        name="fiscal_document_ids"
+                        widget="statinfo"
+                        string="Documents"
+                    />
+                </button>
+            </xpath>
+        </field>
+    </record>
+</odoo>

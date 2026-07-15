@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+  Copyright 2020-TODAY Akretion (http://www.akretion.com/)
+  @author: Renato Lima <renato.lima@akretion.com.br>
+  @author: Raphael Valyi <raphael.valyi@akretion.com.br>
+  License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+-->
+<odoo>
+    <record id="fiscal_invoice_line_form" model="ir.ui.view">
+        <field name="name">l10n_br_account_fiscal_invoice.line.form</field>
+        <field name="model">account.move.line</field>
+        <field name="inherit_id" ref="l10n_br_fiscal.document_line_form" />
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <!-- Add accounting fields after fiscal info -->
+            <xpath expr="//group[@name='fiscal_info']" position="after">
+                <group
+                    name="accounting_fields"
+                    string="Accounting"
+                    groups="account.group_account_user"
+                >
+                    <field
+                        name="account_id"
+                        groups="account.group_account_user"
+                    />
+                    <group
+                        string="Analytic"
+                        groups="analytic.group_analytic_accounting"
+                    >
+                        <field
+                            name="analytic_distribution"
+                            widget="analytic_distribution"
+                            groups="analytic.group_analytic_accounting"
+                        />
+                    </group>
+                </group>
+            </xpath>
+
+            <!-- Add accounting taxes page -->
+            <xpath expr="//page[@name='fiscal_line_extra_info']" position="after">
+                <page name="accounting" string="Accounting">
+                    <group>
+                        <field
+                            name="tax_ids"
+                            widget="many2many_tags"
+                            options="{'no_create': True}"
+                        />
+                    </group>
+                </page>
+            </xpath>
+
+            <!-- Add hidden proxy fields -->
+            <xpath expr="//group[@name='fiscal_fields']" position="inside">
+                <field name="proxy_company_id" invisible="1" />
+                <field name="proxy_partner_id" invisible="1" />
+                <field name="proxy_product_id" invisible="1" />
+                <field name="proxy_name" invisible="1" />
+                <field name="proxy_quantity" invisible="1" />
+                <field name="proxy_price_unit" invisible="1" />
+                <field name="document_id" invisible="1" />
+                <field name="move_id" invisible="1" />
+                <field name="fiscal_document_line_id" invisible="1" />
+            </xpath>
+        </field>
+    </record>
+</odoo>
