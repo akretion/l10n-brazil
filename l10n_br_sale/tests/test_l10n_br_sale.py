@@ -747,3 +747,138 @@ class L10nBrSaleBaseTest:
                 sale.partner_shipping_id,
                 "The Invoice Partner to Shipping should be the same of Sale Order.",
             )
+
+    def test_split_invoices_by_journal(self):
+        """Test that invoices are split by journal_id when lines belong to
+        different fiscal operations with different journals.
+
+        A sale order with lines from two fiscal operations that share the same
+        document type but have different journals should produce two invoices,
+        each with the correct journal.
+        """
+        self._change_user_company(self.company)
+
+        # Find two different journals for this company
+        journals = self.env["account.journal"].search(
+            [("type", "in", ["sale", "general"]), ("company_id", "=", self.company.id)],
+            limit=2,
+        )
+        self.assertGreaterEqual(
+            len(journals),
+            2,
+            "Need at least 2 journals for this test",
+        )
+        journal_1, journal_2 = journals[0], journals[1]
+
+        # Create a second fiscal operation with a different journal
+        fo_second = self.env["l10n_br_fiscal.operation"].create(
+            {
+                "code": "VD_2",
+                "name": "Venda Journal 2",
+                "fiscal_operation_type": "out",
+                "fiscal_type": "sale",
+                "default_price_unit": "sale_price",
+                "state": "approved",
+                "journal_id": journal_2.id,
+            }
+        )
+
+        # Set journal_id on the existing fo_venda for the company
+        fo_venda = self.env.ref("l10n_br_fiscal.fo_venda")
+        fo_venda.sudo().with_context(allowed_company_ids=self.company.ids).write(
+            {"journal_id": journal_1.id}
+        )
+
+        # Create an operation line for the second operation (same cfop as Venda)
+        fo_line_second = self.env["l10n_br_fiscal.operation.line"].create(
+            {
+                "fiscal_operation_id": fo_second.id,
+                "name": "Venda",
+                "ind_ie_dest": "1",
+                "cfop_internal_id": self.env.ref("l10n_br_fiscal.cfop_5101").id,
+                "cfop_external_id": self.env.ref("l10n_br_fiscal.cfop_6101").id,
+                "cfop_export_id": self.env.ref("l10n_br_fiscal.cfop_7101").id,
+                "state": "approved",
+            }
+        )
+
+        # Copy tax definitions from the existing fo_venda_venda operation line
+        fo_line_venda = self.env.ref("l10n_br_fiscal.fo_venda_venda")
+        for tax_def in fo_line_venda.tax_definition_ids:
+            tax_def.copy(
+                {
+                    "fiscal_operation_line_id": fo_line_second.id,
+                }
+            )
+
+        # Create a sale order
+        product = self.env.ref("product.product_product_27")
+        partner = self.env.ref("l10n_br_base.res_partner_akretion")
+        so = self.env["sale.order"].create(
+            {
+                "partner_id": partner.id,
+                "partner_invoice_id": partner.id,
+                "partner_shipping_id": partner.id,
+                "user_id": self.env.ref("base.user_admin").id,
+                "team_id": self.env.ref("sales_team.crm_team_1").id,
+                "fiscal_operation_id": fo_venda.id,
+                "company_id": self.company.id,
+                "order_line": [
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": product.id,
+                            "product_uom_qty": 2,
+                            "product_uom": self.env.ref("uom.product_uom_unit").id,
+                            "price_unit": 500,
+                            "fiscal_operation_id": fo_venda.id,
+                            "fiscal_operation_line_id": fo_line_venda.id,
+                        },
+                    ),
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": product.id,
+                            "product_uom_qty": 2,
+                            "product_uom": self.env.ref("uom.product_uom_unit").id,
+                            "price_unit": 500,
+                            "fiscal_operation_id": fo_second.id,
+                            "fiscal_operation_line_id": fo_line_second.id,
+                        },
+                    ),
+                ],
+            }
+        )
+        self._run_sale_order_onchanges(so)
+        for line in so.order_line:
+            self._run_sale_line_onchanges(line)
+
+        so.action_confirm()
+
+        # Create invoices — should produce 2 invoices due to different journals
+        invoices = so._create_invoices(final=True)
+
+        self.assertEqual(
+            len(invoices),
+            2,
+            "Should create 2 invoices: one per journal",
+        )
+
+        # Verify each invoice has the correct journal
+        journal_ids = invoices.mapped("journal_id")
+        self.assertIn(journal_1.id, journal_ids.ids)
+        self.assertIn(journal_2.id, journal_ids.ids)
+
+        # Verify each invoice has one product line
+        for invoice in invoices:
+            self.assertEqual(
+                len(
+                    invoice.invoice_line_ids.filtered(
+                        lambda ln: ln.display_type == "product"
+                    )
+                ),
+                1,
+                "Each invoice should have exactly one product line",
+            )

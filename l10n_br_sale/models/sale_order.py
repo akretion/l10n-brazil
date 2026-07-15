@@ -104,17 +104,33 @@ class SaleOrder(models.Model):
             for line in self.order_line:
                 line.fiscal_operation_id = False
 
+    @api.model
+    def _get_invoice_grouping_keys(self):
+        keys = super()._get_invoice_grouping_keys()
+        keys.append("journal_id")
+        return keys
+
     def _get_invoiceable_lines(self, final=False):
         lines = super()._get_invoiceable_lines(final=final)
         if not self.fiscal_operation_id:
             # O caso Brasil se caracteriza por ter a Operação Fiscal
             return lines
         document_type_id = self._context.get("document_type_id")
+        journal_id = self._context.get("l10n_br_journal_id")
         lines_with_fo_line = lines.filtered(lambda ln: ln.fiscal_operation_line_id)
         lines_doc_type = lines_with_fo_line.filtered(
-            lambda ln: ln.fiscal_operation_line_id.get_document_type(ln.company_id).id
-            == document_type_id
+            lambda ln: (
+                ln.fiscal_operation_line_id.get_document_type(ln.company_id).id
+                == document_type_id
+            )
         )
+        if journal_id:
+            lines_doc_type = lines_doc_type.filtered(
+                lambda ln: (
+                    ln.fiscal_operation_line_id.fiscal_operation_id.journal_id.id
+                    == journal_id
+                )
+            )
         other_lines = lines.filtered(lambda ln: ln.is_downpayment or ln.display_type)
         lines_doc_type |= other_lines
         return lines_doc_type
@@ -126,16 +142,24 @@ class SaleOrder(models.Model):
         lines_with_fiscal_op_line = self.order_line.filtered(
             lambda ln: ln.fiscal_operation_line_id
         )
-        document_types = {
-            line.fiscal_operation_line_id.get_document_type(line.company_id)
-            for line in lines_with_fiscal_op_line
-        }
+        # Build set of (document_type_id, journal_id) pairs to split invoices
+        # by both document type and journal, since different fiscal operations
+        # may require different journals.
+        doc_journal_pairs = set()
+        for line in lines_with_fiscal_op_line:
+            doc_type = line.fiscal_operation_line_id.get_document_type(line.company_id)
+            journal = line.fiscal_operation_line_id.fiscal_operation_id.journal_id
+            doc_journal_pairs.add((doc_type.id, journal.id if journal else False))
 
         moves = self.env["account.move"]
-        for document_type in document_types:
-            self = self.with_context(
-                document_type_id=document_type.id, l10n_br_fiscal_active=True
-            )
+        for doc_type_id, journal_id in doc_journal_pairs:
+            ctx = {
+                "document_type_id": doc_type_id,
+                "l10n_br_fiscal_active": True,
+            }
+            if journal_id:
+                ctx["l10n_br_journal_id"] = journal_id
+            self = self.with_context(**ctx)
             try:
                 moves |= super()._create_invoices(
                     grouped=grouped, final=final, date=date
@@ -180,7 +204,10 @@ class SaleOrder(models.Model):
                 if document_serie:
                     result["document_serie_id"] = document_serie.id
 
-            if self.fiscal_operation_id.journal_id:
+            journal_id = self._context.get("l10n_br_journal_id")
+            if journal_id:
+                result["journal_id"] = journal_id
+            elif self.fiscal_operation_id.journal_id:
                 result["journal_id"] = self.fiscal_operation_id.journal_id.id
 
         return result
