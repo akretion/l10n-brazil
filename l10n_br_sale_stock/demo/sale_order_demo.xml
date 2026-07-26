@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <odoo>
-
     <!-- Pedido de Venda com o Endereço de Entrega(partner_shipping_id)
      diferente do Endereço de Faturamento( partner_invoice_id ), no Brasil
      isso só é permitido se os dois endereços estiverem no mesmo Estado,
@@ -458,5 +457,4 @@
             ref="l10n_br_fiscal.fo_bonificacao_bonificacao"
         />
     </record>
-
 </odoo>
