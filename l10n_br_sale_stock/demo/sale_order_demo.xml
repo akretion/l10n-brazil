@@ -387,7 +387,10 @@
         <field name="partner_invoice_id" ref="l10n_br_base.res_partner_akretion" />
         <field name="partner_shipping_id" ref="l10n_br_base.res_partner_akretion" />
         <field name="user_id" ref="l10n_br_base.user_demo_presumido" />
-        <field name="pricelist_id" ref="sale_stock_picking_invoicing.demo_pricelist" />
+        <!-- The demo_pricelist belongs to main_company, so it cannot be
+             used here because this order belongs to empresa_lucro_presumido
+             and Odoo 18 enforces multi-company consistency on sale.order.
+             The pricelist will fall back to the company default. -->
         <field name="team_id" ref="sales_team.crm_team_1" />
         <field name="state">draft</field>
         <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_venda" />
