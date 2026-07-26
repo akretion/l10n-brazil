@@ -5,3 +5,6 @@ nfelib
 Setuptools<81
 signxml==3.2.2
 xmldiff
+odoo-addon-l10n_br_fiscal @ git+https://github.com/OCA/l10n-brazil.git@refs/pull/4590/head#subdirectory=l10n_br_fiscal
+odoo-addon-l10n_br_stock @ git+https://github.com/OCA/l10n-brazil.git@refs/pull/4590/head#subdirectory=l10n_br_stock
+odoo-addon-l10n_br_stock_account @ git+https://github.com/OCA/l10n-brazil.git@refs/pull/4590/head#subdirectory=l10n_br_stock_account
