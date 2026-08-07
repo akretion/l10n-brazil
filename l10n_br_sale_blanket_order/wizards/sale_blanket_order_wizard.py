@@ -35,12 +35,14 @@ class SaleBlanketOrderWizard(models.TransientModel):
         if blanket_line.fiscal_operation_line_id:
             company = blanket_line.company_id or self.blanket_order_id.company_id
             vals["tax_id"] = [
-                Command.set(
+                (
+                    6,
+                    0,
                     blanket_line.fiscal_tax_ids.account_taxes(
                         user_type="sale",
                         fiscal_operation=blanket_line.fiscal_operation_id,
                         company=company,
-                    ).ids
+                    ).ids,
                 )
             ]
         return vals
