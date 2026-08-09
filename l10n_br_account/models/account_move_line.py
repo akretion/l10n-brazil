@@ -141,7 +141,29 @@ class AccountMoveLine(models.Model):
 
     def write(self, values):
         self._sync_proxy_fields_vals(values)
-        res = super().write(values)
+        # Lines without a fiscal document line (typically tax and payment
+        # term lines) must be written with sudo: in Odoo 18, the global
+        # record rules of the delegated parent model
+        # (l10n_br_fiscal.document.line, e.g. the multi-company rule
+        # l10n_br_fiscal_document_line_rule) are enforced on the child
+        # model through a ('fiscal_document_line_id', 'any', domain)
+        # pushdown clause, which evaluates to False when the m2o is
+        # empty. As a result, any non-superuser write on such lines —
+        # e.g. the dirty-marker writes performed by account.move._post()
+        # when l10n_br_fiscal_edi is installed — raises an AccessError.
+        # Those lines carry no fiscal data, so the parent fiscal rules
+        # are meaningless for them; core account rules still apply to the
+        # fiscal lines written without sudo below.
+        # TODO(upstream): the proper fix would be in Odoo core
+        # (ir.rule._compute_domain should tolerate an empty delegate m2o,
+        # e.g. ['|', (fname, '=', False), (fname, 'any', domain)]).
+        no_fiscal_lines = self.filtered(lambda l: not l.fiscal_document_line_id)
+        res = True
+        if no_fiscal_lines:
+            res = super(AccountMoveLine, no_fiscal_lines.sudo()).write(values)
+        fiscal_lines = self - no_fiscal_lines
+        if fiscal_lines:
+            res = super(AccountMoveLine, fiscal_lines).write(values) and res
         return res
 
     @api.model_create_multi
