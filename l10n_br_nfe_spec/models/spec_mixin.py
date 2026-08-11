@@ -7,6 +7,8 @@ from odoo import fields, models
 class NfeSpecMixin(models.AbstractModel):
     _description = "Abstract Model"
     _name = "spec.mixin.nfe"
+    spec_schema = "nfe"
+    spec_version = "40"
     _nfe40_odoo_module = "odoo.addons.l10n_br_nfe_spec.models.v4_0.leiaute_nfe_v4_00"
     _nfe40_binding_module = "nfelib.nfe.bindings.v4_0.leiaute_nfe_v4_00"
 

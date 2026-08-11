@@ -47,7 +47,14 @@ def patched_add_field(self, name, field):
         original_add_field(self, name, field)
 
 
-# Apply the patch
+# Apply the patch at module level — needed before setUpClass runs
+# because Odoo's model setup happens during module loading.
+# Cannot be scoped to setUpClass/tearDownClass because Odoo runs
+# post-test _setup_base validation after tearDownClass, which needs
+# the patched _add_field to accept magic columns on dynamically
+# created test models. In practice, this test module is disabled by
+# default (commented out in tests/__init__.py), and when enabled it
+# is typically tested in isolation, so the module-level patch is fine.
 models.BaseModel._add_field = patched_add_field
 
 
@@ -146,6 +153,7 @@ spec_mixin.NfeSpecMixin.match_or_create_m2o_fake = match_or_create_m2o_fake
 class NFeImportTest(TransactionCase, FakeModelLoader):
     def setUp(self):
         super().setUp()
+
         self.env = self.env(context=dict(self.env.context, tracking_disable=True))
         self.loader = FakeModelLoader(self.env, self.__module__)
         self.loader.backup_registry()

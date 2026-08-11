@@ -58,11 +58,11 @@ class SpecMixinExport(models.AbstractModel):
         for c in set(classes):
             if c is None:
                 continue
-            if not c.startswith(f"{self._context['spec_schema']}."):
+            if not c.startswith(f"{self.env.context['spec_schema']}."):
                 continue
             # the following filter to fields to show
             # when several XSD class are injected in the same object
-            if self._context.get("spec_class") and c != self._context["spec_class"]:
+            if self.env.context.get("spec_class") and c != self.env.context["spec_class"]:
                 continue
             spec_classes.append(c)
         return spec_classes
@@ -168,10 +168,17 @@ class SpecMixinExport(models.AbstractModel):
 
     def _export_many2one(self, field_name, xsd_required, class_obj=None):
         self.ensure_one()
-        if field_name in self._get_stacking_points().keys():
-            return self._build_binding(
-                class_name=self._get_stacking_points()[field_name].comodel_name
-            )
+        sp = self._get_stacking_points()
+        if field_name in sp.keys():
+            sp_value = sp[field_name]
+            if hasattr(sp_value, "comodel_name"):
+                # Stacking point stored as a Field object
+                comodel_name = sp_value.comodel_name
+            else:
+                # Stacking point stored as a string (field name),
+                # look up the comodel from the current model's fields
+                comodel_name = class_obj._fields[field_name].comodel_name
+            return self._build_binding(class_name=comodel_name)
         else:
             return (self[field_name] or self)._build_binding(
                 class_name=class_obj._fields[field_name].comodel_name

@@ -8,7 +8,7 @@ import logging
 import re
 from datetime import datetime
 from enum import Enum
-from typing import ForwardRef
+from typing import ForwardRef, Sequence, get_origin as typing_get_origin
 
 from odoo import Command, api, models
 
@@ -83,10 +83,46 @@ class SpecMixinImport(models.AbstractModel):
         # typing.Union[nfelib.nfe.bindings.v4_0.leiaute_nfe_v4_00.TinfRespTec, NoneType]
         # or typing.Union[ForwardRef('Tnfe.InfNfe.Det.Imposto'), NoneType]
         # that's why we test if the 1st Union type is a dataclass or a ForwardRef
-        if attr[1].type is str or (
-            not isinstance(attr[1].type.__args__[0], ForwardRef)
-            and not dataclasses.is_dataclass(attr[1].type.__args__[0])
+        #
+        # Also detect list/sequence types (list['Items.Item'] in Python 3.12+)
+        # which would otherwise be treated as SimpleType.
+        attr_type = attr[1].type
+        is_list_type = False
+        # Check both direct type and Union args for list types
+        for check_type in [attr_type] + list(
+            getattr(attr_type, "__args__", ())
         ):
+            origin = typing_get_origin(check_type)
+            if origin is not None and issubclass(
+                origin, (list, tuple, Sequence)
+            ):
+                is_list_type = True
+                break
+            if str(check_type).startswith("typing.List"):
+                is_list_type = True
+                break
+
+        is_simple = False
+        if attr_type is str:
+            is_simple = True
+        elif hasattr(attr_type, "__args__"):
+            arg0 = attr_type.__args__[0]
+            if dataclasses.is_dataclass(arg0):
+                is_simple = False
+            elif is_list_type:
+                is_simple = False
+            elif isinstance(arg0, ForwardRef) and "ForwardRef" in str(
+                attr_type
+            ):
+                # ForwardRef that is NOT a list: treat as SimpleType
+                # (e.g., xsd_type="x:SKU" creates ForwardRef with string value)
+                is_simple = True
+            else:
+                is_simple = True
+        else:
+            is_simple = True
+
+        if is_simple:
             # SimpleType
             if isinstance(value, Enum):
                 value = value.value
@@ -100,10 +136,19 @@ class SpecMixinImport(models.AbstractModel):
             vals[key] = value
 
         else:
-            if str(attr[1].type).startswith("typing.List") or "ForwardRef" in str(
-                attr[1].type
-            ):  # o2m
-                binding_type = attr[1].type.__args__[0].__forward_arg__
+            # ComplexType
+            if is_list_type:  # o2m
+                list_args = getattr(attr[1].type, "__args__", None)
+                if list_args:
+                    arg0 = list_args[0]
+                    if hasattr(arg0, "__forward_arg__"):
+                        binding_type = arg0.__forward_arg__
+                    elif hasattr(arg0, "__name__"):
+                        binding_type = arg0.__name__
+                    else:
+                        binding_type = str(arg0)
+                else:
+                    binding_type = "unknown"
             else:
                 binding_type = attr[1].type.__args__[0].__name__
 
@@ -125,7 +170,7 @@ class SpecMixinImport(models.AbstractModel):
             if comodel is None:  # example skip ICMS100 class
                 return
 
-            if str(attr[1].type).startswith("typing.List"):
+            if is_list_type:
                 # o2m
                 lines = []
                 for line in [li for li in value if li]:
@@ -158,8 +203,8 @@ class SpecMixinImport(models.AbstractModel):
 
         def _comodel_from_model_suffix(model_suffix):
             comodel_name = "{}.{}.{}".format(
-                self._context["spec_schema"],
-                self._context["spec_version"].replace(".", "")[0:2],
+                self.env.context["spec_schema"],
+                self.env.context["spec_version"].replace(".", "")[0:2],
                 model_suffix,
             )
             return self._get_concrete_model(comodel_name)
@@ -194,8 +239,17 @@ class SpecMixinImport(models.AbstractModel):
 
     @api.model
     def _build_many2one(self, comodel, vals, comodel_vals, key, value, path):
-        if comodel._name == self._name:
-            # stacked m2o
+        stacked = comodel._name == self._name
+        # Also check for stacking via spec mappings:
+        # if the comodel's spec model is stacked into this model
+        if not stacked:
+            from odoo.addons.spec_driven_model.models.spec_models import (
+                _get_spec_mappings,
+            )
+            mappings = _get_spec_mappings(self.env.registry)
+            stacked = mappings.get(comodel._name) == self._name
+        if stacked:
+            # stacked m2o: unpack child values directly
             vals.update(comodel_vals)
         else:
             vals[key] = comodel.match_or_create_m2o(comodel_vals, vals)
@@ -301,7 +355,7 @@ class SpecMixinImport(models.AbstractModel):
         if model is None:
             model = self
         default_key = [model._rec_name or "name"]
-        search_keys = f"_{self._context['spec_schema']}_search_keys"
+        search_keys = f"_{self.env.context['spec_schema']}_search_keys"
         if hasattr(model, search_keys):
             keys = getattr(model, search_keys) + default_key
         else:
@@ -351,7 +405,7 @@ class SpecMixinImport(models.AbstractModel):
             vals = self._prepare_import_dict(
                 rec_dict, model=model, parent_dict=parent_dict, defaults_model=model
             )
-            if self._context.get("dry_run"):
+            if self.env.context.get("dry_run"):
                 rec = model.new(vals)
                 rec_id = rec.id
                 # at this point for NewId records, some fields

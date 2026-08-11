@@ -1,13 +1,11 @@
 # Copyright 2019-TODAY Akretion - Raphael Valyi <raphael.valyi@akretion.com>
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.en.html).
 
-from importlib import import_module
-
 from odoo import api, models
 from odoo.models import is_definition_class
 from odoo.tools import mute_logger
 
-from .spec_models import SPEC_MIXIN_MAPPINGS, SpecModel, StackedModel
+from .spec_models import SpecModel, StackedModel, _get_spec_mappings
 
 
 class SpecMixin(models.AbstractModel):
@@ -43,36 +41,36 @@ class SpecMixin(models.AbstractModel):
     @api.model
     def _get_concrete_model(self, model_name):
         "Lookup for concrete models where abstract schema mixins were injected"
-        if SPEC_MIXIN_MAPPINGS[self.env.cr.dbname].get(model_name) is not None:
-            return self.env[SPEC_MIXIN_MAPPINGS[self.env.cr.dbname].get(model_name)]
+        if _get_spec_mappings(self.env.registry).get(model_name) is not None:
+            return self.env[_get_spec_mappings(self.env.registry).get(model_name)]
         else:
             return self.env.get(model_name)
 
     def _spec_prefix(self, split=False):
         """
-        Get spec_schema and spec_version from context or from class module
+        Get spec_schema and spec_version from context or from
+        class-level attributes on spec mixin ancestors.
         """
-        if self._context.get("spec_schema") and self._context.get("spec_version"):
-            spec_schema = self._context.get("spec_schema")
-            spec_version = self._context.get("spec_version")
-            if spec_schema and spec_version:
-                spec_version = spec_version.replace(".", "")[:2]
-                if split:
-                    return spec_schema, spec_version
-                return f"{spec_schema}{spec_version}"
+        # Runtime context override (e.g., for import/export operations)
+        ctx_schema = self.env.context.get("spec_schema")
+        ctx_version = self.env.context.get("spec_version")
+        if ctx_schema and ctx_version:
+            ctx_version = ctx_version.replace(".", "")[:2]
+            if split:
+                return ctx_schema, ctx_version
+            return f"{ctx_schema}{ctx_version}"
 
+        # Look for spec_schema/spec_version class attributes on MRO ancestors
         for ancestor in type(self).mro():
-            if not ancestor.__module__.startswith("odoo.addons."):
-                continue
-            mod = import_module(".".join(ancestor.__module__.split(".")[:-1]))
-            if hasattr(mod, "spec_schema"):
-                spec_schema = mod.spec_schema
-                spec_version = mod.spec_version.replace(".", "")[:2]
+            schema = getattr(ancestor, "spec_schema", None)
+            version = getattr(ancestor, "spec_version", None)
+            if schema and version:
+                spec_version = version.replace(".", "")[:2]
                 if split:
-                    return spec_schema, spec_version
-                return f"{spec_schema}{spec_version}"
+                    return schema, spec_version
+                return f"{schema}{spec_version}"
 
-        return None, None if split else None
+        return (None, None) if split else None
 
     def _get_spec_property(self, spec_property="", fallback=None):
         """
@@ -89,6 +87,55 @@ class SpecMixin(models.AbstractModel):
         return res
 
     def _register_remaining_schema_models_hook(self):
+        """
+        Serialize the hook across workers to prevent INSERT collisions
+        on ir_model_data when multiple workers start simultaneously.
+
+        Uses a PostgreSQL advisory lock (pg_try_advisory_lock) — the
+        same mechanism Odoo's ir.cron uses for cron job locking.  We
+        use a non-blocking lock per schema so other workers skip
+        immediately instead of queuing, and different schemas (NFe,
+        CT-e, MDF-e) can register in parallel.
+        """
+        spec_schema, spec_version = self._spec_prefix(split=True)
+        if not spec_schema:
+            return
+
+        load_key = f"_{spec_schema}_register_hook_loaded"
+        if hasattr(self.env.registry, load_key):
+            return  # already done by this registry instance
+
+        cr = self.env.cr
+        # Deterministic lock ID per schema — no collision between
+        # different spec schemas and no magic-number collision risk.
+        lock_id = hash(spec_schema) & 0x7FFFFFFF
+
+        cr.execute("SELECT pg_try_advisory_lock(%s)", [lock_id])
+        acquired = cr.fetchone()[0]
+        if not acquired:
+            # Another worker is already handling this schema — skip.
+            return
+
+        try:
+            # Double-check both the registry (same-process fast path)
+            # and the database (cross-worker safety).
+            if hasattr(self.env.registry, load_key):
+                return
+
+            cr.execute(
+                "SELECT 1 FROM ir_model_data WHERE name LIKE %s LIMIT 1",
+                (f"field_{spec_schema}{spec_version}%",),
+            )
+            if cr.fetchone():
+                # Another worker already created the records.
+                setattr(self.env.registry, load_key, True)
+                return
+
+            self._register_remaining_schema_models_hook_impl()
+        finally:
+            cr.execute("SELECT pg_advisory_unlock(%s)", [lock_id])
+
+    def _register_remaining_schema_models_hook_impl(self):
         """
         Called once all modules are loaded.
         Here we take all spec models that were not injected into existing concrete
@@ -118,7 +165,7 @@ class SpecMixin(models.AbstractModel):
             i[0]
             for i in self.env.cr.fetchall()
             if self.env.registry.get(i[0])
-            and not SPEC_MIXIN_MAPPINGS[self.env.cr.dbname].get(i[0])
+            and not _get_spec_mappings(self.env.registry).get(i[0])
         }
         spec_module = self._get_spec_property("odoo_module")
         if "_spec." in spec_module:
@@ -153,7 +200,7 @@ class SpecMixin(models.AbstractModel):
             fields = merged_class._fields
             rec_name = next(
                 filter(
-                    lambda x: (x.startswith(field_prefix) and "_choice" not in x),
+                    lambda x: x.startswith(field_prefix) and "_choice" not in x,
                     fields,
                 ),
                 None,
@@ -169,13 +216,6 @@ class SpecMixin(models.AbstractModel):
                     "_module": odoo_module,
                 },
             )
-            # we set _spec_schema and _spec_version because
-            # _build_model will not have context access:
-            # In Odoo 18+, the test framework monitors model attribute modifications
-            # and logs stack traces. We suppress these during dynamic model building.
-            with mute_logger("odoo.tests.common"):
-                model_type._spec_schema = spec_schema
-                model_type._spec_version = spec_version
             models.MetaModel.module_to_models[odoo_module] += [model_type]
             concrete_models.append(model_type)
 
