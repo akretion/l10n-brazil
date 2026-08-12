@@ -41,15 +41,22 @@ class AccountChartTemplate(models.Model):
             self.load_fiscal_taxes()
         return account_ref, taxes_ref
 
-    def load_fiscal_taxes(self):
+    def load_fiscal_taxes(self, companies=None):
         """
         Relate account taxes with fiscal taxes to enable the Brazilian
         tax engine to kick in with the installed chart of account.
+
+        Args:
+            companies: Optional recordset of companies to process.
+                If None (default), processes all companies that use
+                this chart template. Backported from 18.0 to allow
+                targeted fiscal tax loading for integration tests.
         """
         for coa_tpl in self:
-            companies = self.env["res.company"].search(
-                [("chart_template_id", "=", coa_tpl.id)]
-            )
+            if companies is None:
+                companies = self.env["res.company"].search(
+                    [("chart_template_id", "=", coa_tpl.id)]
+                )
 
             for company in companies:
                 taxes = self.env["account.tax"].search(
