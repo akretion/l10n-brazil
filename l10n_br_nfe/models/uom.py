@@ -14,10 +14,10 @@ class Uom(models.Model):
 
         Some XMLs use a supplier abbreviation (e.g. ``uCom='MIL'``) that only
         matches the company UoM by name (``MILHEI``), hence the name_search
-        fallback kept for backward compatibility. Creation is prevented by the
-        ``spec_create_forbidden_models`` context key set by the import caller,
-        so falling through to super() leaves the UoM unset instead of creating
-        a partial record.
+        fallback kept for backward compatibility. The UoM is never created:
+        ``uom.uom`` is not a spec model, so there is no super() implementation
+        to fall back to (``spec_create_forbidden_models`` already prevents
+        creating master data during import).
         """
         if rec_dict.get("code"):
             match = self.search([("code", "=", rec_dict.get("code"))], limit=1)
@@ -26,4 +26,4 @@ class Uom(models.Model):
             match = self.name_search(rec_dict.get("code"), limit=1)
             if match:
                 return match[0][0]
-        return super().match_or_create_m2o(rec_dict, parent_dict, model)
+        return False
