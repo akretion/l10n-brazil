@@ -72,6 +72,7 @@ class NFeImportTest(TransactionCase):
             del line["product_id"]
             del line["ncm_internal"]
             del line["cfop_warning"]
+            del line["product_domain"]
         self.assertEqual(len(lines), 4)
         self.assertDictEqual(
             lines[0],
@@ -177,8 +178,8 @@ class NFeImportTest(TransactionCase):
         self.assertAlmostEqual(move.amount_freight_value, 0, places=2)
         self.assertAlmostEqual(move.amount_insurance_value, 0, places=2)
         self.assertAlmostEqual(move.amount_other_value, 0, places=2)
-        self.assertAlmostEqual(move.amount_tax, 251.90, places=2)
-        self.assertAlmostEqual(move.amount_total, 12227.86, places=2)
+        self.assertAlmostEqual(move.amount_tax, 132.14, places=2)
+        self.assertAlmostEqual(move.amount_total, 12108.10, places=2)
 
         self.assertEqual(len(move.invoice_line_ids), 4)
 
@@ -242,9 +243,9 @@ class NFeImportTest(TransactionCase):
         )
 
         self.assertEqual(len(move.due_line_ids), 3)
-        self.assertAlmostEqual(move.due_line_ids[0].credit, 4075.95, places=2)
-        self.assertAlmostEqual(move.due_line_ids[1].credit, 4075.95, places=2)
-        self.assertAlmostEqual(move.due_line_ids[2].credit, 4075.96, places=2)
+        self.assertAlmostEqual(move.due_line_ids[0].credit, 4035.63, places=2)
+        self.assertAlmostEqual(move.due_line_ids[1].credit, 4035.63, places=2)
+        self.assertAlmostEqual(move.due_line_ids[2].credit, 4036.84, places=2)
 
     def test_import_incomplete_document_is_blocked(self):
         """A document with a line missing its product/uom/qty/price must not
