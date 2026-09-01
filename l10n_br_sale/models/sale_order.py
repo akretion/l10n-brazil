@@ -9,6 +9,32 @@ class SaleOrder(models.Model):
     _name = "sale.order"
     _inherit = [_name, "l10n_br_fiscal.document.mixin"]
 
+    @api.depends(
+        "order_line.fiscal_amount_untaxed",
+        "order_line.fiscal_amount_tax",
+        "order_line.fiscal_amount_total",
+    )
+    def _compute_amounts(self):
+        """Use fiscal line amounts for Brazilian sales orders.
+
+        Odoo 18's _compute_amounts recomputes taxes via AccountTax utilities
+        and feeds sale.order.amount_total from
+        tax_totals['total_amount_currency']. For a fiscal order that
+        delegation creates a feedback loop with the rewritten
+        l10n_br_account AccountTax._get_tax_totals_summary(): that override
+        sets total_amount_currency to record._get_total_for_tax_totals(),
+        which for a sale order line is the very order.amount_total being
+        computed. The fiscal amounts of the lines are the authoritative
+        source, mirroring l10n_br_purchase's _amount_all override.
+        """
+        result = super()._compute_amounts()
+        for order in self.filtered("fiscal_operation_id"):
+            lines = order.order_line
+            order.amount_untaxed = sum(lines.mapped("fiscal_amount_untaxed"))
+            order.amount_tax = sum(lines.mapped("fiscal_amount_tax"))
+            order.amount_total = sum(lines.mapped("fiscal_amount_total"))
+        return result
+
     @api.model
     def _default_fiscal_operation(self):
         return self.env.company.sale_fiscal_operation_id
