@@ -349,6 +349,19 @@ class TestMoveEdition(TransactionCase):
             aml.fiscal_document_line_id.uot_id, self.env.ref("uom.product_uom_unit")
         )
 
+        # The tax_totals widget must agree with the stored invoice total.
+        # The fiscal move total is authoritative (computed from the fiscal
+        # line amounts via _compute_amount), and _get_tax_totals_summary()
+        # must mirror it back into the widget instead of leaving a generic
+        # tax-engine value.
+        self.assertTrue(move.tax_totals, "tax_totals must not be empty.")
+        self.assertAlmostEqual(
+            move.tax_totals["total_amount_currency"],
+            move.amount_total,
+            places=2,
+            msg="tax_totals widget total should match the invoice amount_total.",
+        )
+
         move.action_post()
         self.assertEqual(move.state, "posted")
         move.button_cancel()
