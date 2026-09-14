@@ -180,14 +180,13 @@ class OperationLine(models.Model):
 
     @api.model
     def _expire_invalid_lines(self):
-        """Mark as 'expired' operation lines outside their date validity
-        window (date_start/date_end)."""
+        """Mark as 'expired' operation lines whose validity window has
+        already ended (date_end in the past). Lines that have not started
+        yet are left alone -- see `tools.date_expired_domain()`."""
         today = fields.Datetime.now()
-        candidates = self.search([("state", "!=", "expired")])
-        valid = self.search(
-            [("state", "!=", "expired")] + tools.date_validity_domain(today)
+        expired = self.search(
+            [("state", "!=", "expired")] + tools.date_expired_domain(today)
         )
-        expired = candidates - valid
         if expired:
             expired.write({"state": "expired"})
 
@@ -256,6 +255,7 @@ class OperationLine(models.Model):
         national_taxation_code=None,
         service_type=None,
         ind_final=None,
+        reference_date=None,
     ):
         """
         Map and determine the applicable fiscal taxes, CFOP, IPI guideline,
@@ -296,6 +296,10 @@ class OperationLine(models.Model):
             (l10n_br_fiscal.service.type).
         :param ind_final: (Passed to icms_regulation_id.map_tax; not directly
             used for tax calculation here)
+        :param reference_date: Optional datetime used to check the
+            date_start/date_end validity of tax definitions and of the
+            fiscal operation line itself; defaults to now() when not
+            provided.
         :return: A dictionary containing:
             - 'taxes': A dictionary of applicable tax records
               (l10n_br_fiscal.tax) keyed by their tax_domain.
@@ -335,6 +339,7 @@ class OperationLine(models.Model):
             city_taxation_code=city_taxation_code,
             national_taxation_code=national_taxation_code,
             service_type=service_type,
+            reference_date=reference_date,
         ):
             self._build_mapping_result(mapping_result, tax_definition)
 
@@ -382,6 +387,7 @@ class OperationLine(models.Model):
                     cest=cest,
                     operation_line=self,
                     ind_final=ind_final,
+                    reference_date=reference_date,
                 )
 
                 for tax_def in icms_tax_defs:
@@ -402,6 +408,7 @@ class OperationLine(models.Model):
             city_taxation_code=city_taxation_code,
             national_taxation_code=national_taxation_code,
             service_type=service_type,
+            reference_date=reference_date,
         ):
             self._build_mapping_result(mapping_result, tax_definition)
 
@@ -419,6 +426,7 @@ class OperationLine(models.Model):
             city_taxation_code=city_taxation_code,
             national_taxation_code=national_taxation_code,
             service_type=service_type,
+            reference_date=reference_date,
         ):
             self._build_mapping_result(mapping_result, tax_definition)
 
@@ -436,6 +444,7 @@ class OperationLine(models.Model):
             city_taxation_code=city_taxation_code,
             national_taxation_code=national_taxation_code,
             service_type=service_type,
+            reference_date=reference_date,
         ):
             self._build_mapping_result(mapping_result, tax_definition)
 
