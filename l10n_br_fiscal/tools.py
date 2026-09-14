@@ -72,6 +72,24 @@ def date_validity_domain(
     ]
 
 
+def date_expired_domain(reference_date, date_end_field="date_end"):
+    """Domain fragment matching records whose validity window is definitely
+    over by `reference_date` (i.e. `date_end_field` is set and in the past).
+
+    Unlike `date_validity_domain()`, records that have not started yet
+    (only `date_start` in the future) are intentionally left out:
+    they are already excluded from selection everywhere by
+    `date_validity_domain()`, and there is no mechanism to bring a record
+    back once it has been archived/marked expired. Automatic cleanup (the
+    daily cron) must therefore only ever touch records that are
+    definitively over, never ones that simply haven't started yet.
+    """
+    return [
+        (date_end_field, "!=", False),
+        (date_end_field, "<", reference_date),
+    ]
+
+
 def path_edoc_company(company_id):
     db_name = company_id._cr.dbname
     filestore = tools.config.filestore(db_name)

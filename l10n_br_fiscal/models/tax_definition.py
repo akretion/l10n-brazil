@@ -350,14 +350,13 @@ class TaxDefinition(models.Model):
 
     @api.model
     def _expire_invalid_definitions(self):
-        """Mark as 'expired' tax definitions outside their date validity
-        window (date_start/date_end)."""
+        """Mark as 'expired' tax definitions whose validity window has
+        already ended (date_end in the past). Definitions that have not
+        started yet are left alone -- see `tools.date_expired_domain()`."""
         today = fields.Datetime.now()
-        candidates = self.search([("state", "!=", "expired")])
-        valid = self.search(
-            [("state", "!=", "expired")] + tools.date_validity_domain(today)
+        expired = self.search(
+            [("state", "!=", "expired")] + tools.date_expired_domain(today)
         )
-        expired = candidates - valid
         if expired:
             expired.write({"state": "expired"})
 
@@ -465,6 +464,7 @@ class TaxDefinition(models.Model):
         city_taxation_code=None,
         national_taxation_code=None,
         service_type=None,
+        reference_date=None,
     ):
         """
         Filter and return tax definitions that match the given criteria.
@@ -476,6 +476,7 @@ class TaxDefinition(models.Model):
 
         The matching is based on:
         - Current record state (not 'expired').
+        - Date validity (date_start, date_end) against reference_date.
         - Originating state (state_from_id).
         - Destination states (state_to_ids), allowing for no specific destination.
         - NCM, NBM, CEST codes, allowing for no specific code.
@@ -500,12 +501,17 @@ class TaxDefinition(models.Model):
             (l10n_br_fiscal.national.taxation.code).
         :param service_type: Optional Service Type record
             (l10n_br_fiscal.service.type).
+        :param reference_date: Optional datetime used to check date_start/
+            date_end validity; defaults to now() when not provided.
         :return: A recordset of matching
             l10n_br_fiscal.tax.definition.
         """
 
         if not self:
             return self
+
+        if not reference_date:
+            reference_date = fields.Datetime.now()
 
         if not ncm:
             ncm = product.ncm_id
@@ -520,7 +526,7 @@ class TaxDefinition(models.Model):
             ("state", "!=", "expired"),
             ("id", "in", self.ids),
         ]
-        domain += tools.date_validity_domain(fields.Datetime.now())
+        domain += tools.date_validity_domain(reference_date)
         domain += [
             "|",
             ("state_to_ids", "=", False),

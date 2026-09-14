@@ -69,18 +69,18 @@ class DataAbstract(models.AbstractModel):
 
     @api.model
     def _get_invalid_records(self):
-        """Return active records whose validity window (date_start/date_end)
-        does not include today."""
+        """Return active records whose validity window has already ended
+        (date_end set and in the past). Records that have not started yet
+        (date_start in the future) are intentionally left active: there is
+        no method to reactivate them once archived, so archiving them
+        early would strand them archived forever once their start date
+        arrives. See `tools.date_expired_domain()`."""
         today = fields.Date.context_today(self)
-        active_records = self.search([("active", "=", True)])
-        valid_records = self.search(
-            [("active", "=", True)] + tools.date_validity_domain(today)
-        )
-        return active_records - valid_records
+        return self.search([("active", "=", True)] + tools.date_expired_domain(today))
 
     @api.model
     def _expire_invalid_records(self):
-        """Deactivate records that fell outside their date validity window."""
+        """Deactivate records whose date validity window has ended."""
         invalid_records = self._get_invalid_records()
         if invalid_records:
             invalid_records.write({"active": False})
