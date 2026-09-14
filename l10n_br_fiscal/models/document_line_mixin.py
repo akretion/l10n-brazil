@@ -300,9 +300,7 @@ class FiscalDocumentLineMixin(models.AbstractModel):
                         company=line.company_id,
                         partner=line.partner_id,
                         product=line.product_id,
-                        reference_date=getattr(
-                            line._get_document(), "document_date", False
-                        ),
+                        reference_date=line._get_reference_date(),
                     )
                 )
 
@@ -334,9 +332,7 @@ class FiscalDocumentLineMixin(models.AbstractModel):
                     national_taxation_code=line.national_taxation_code_id,
                     service_type=line.service_type_id,
                     ind_final=line.ind_final,
-                    reference_date=getattr(
-                        line._get_document(), "document_date", False
-                    ),
+                    reference_date=line._get_reference_date(),
                 )
                 line.cfop_id = mapping_result["cfop"]
                 line.ipi_guideline_id = mapping_result["ipi_guideline"]
@@ -541,6 +537,23 @@ class FiscalDocumentLineMixin(models.AbstractModel):
     def _get_document(self):
         self.ensure_one()
         return self.document_id
+
+    def _get_reference_date(self):
+        """Best-effort `document_date` of this line's document, meant to be
+        used as `reference_date` when checking fiscal validity windows.
+
+        Some mixin users are not tied to any real document (e.g.
+        `l10n_br_pos.product_fiscal_map`, which reuses this mixin only to
+        precompute a `fiscal_operation_line_id`/taxes cache and has no
+        `document_id` field at all), so `_get_document()` itself may raise
+        AttributeError; treat that the same as "no document date known".
+        """
+        self.ensure_one()
+        try:
+            document = self._get_document()
+        except AttributeError:
+            return False
+        return getattr(document, "document_date", False)
 
     def _get_fiscal_partner(self):
         """
