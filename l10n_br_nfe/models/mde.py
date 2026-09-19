@@ -117,7 +117,7 @@ class MDe(models.Model):
             )
 
     def _get_processor(self):
-        certificado = self.env.company._get_br_ecertificate()
+        certificado = self.company_id._get_br_ecertificate()
         session = Session()
         session.verify = False
 

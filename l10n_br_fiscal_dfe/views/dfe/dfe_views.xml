@@ -25,7 +25,7 @@
                             <field
                                 name="company_id"
                                 required="1"
-                                domain="[('certificate_nfe_id', '!=', False)]"
+                                domain="[('certificate_id', '!=', False)]"
                             />
                             <field name="last_nsu" required="1" />
                         </group>

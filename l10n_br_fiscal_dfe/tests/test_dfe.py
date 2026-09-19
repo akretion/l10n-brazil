@@ -130,6 +130,13 @@ class TestDFe(TransactionCase):
             self.dfe_id._cron_search_documents()
             self.assertEqual(self.dfe_id.last_nsu, "000000000000201")
 
+    def test_processor_uses_dfe_company_certificate(self):
+        """The certificate of the DF-e company is used, not the one of the
+        current company"""
+        self.assertNotEqual(self.dfe_id.company_id, self.env.company)
+        self.env.company.certificate_id = False
+        self.assertTrue(self.dfe_id._get_processor())
+
     def test_utils(self):
         nsu_formatted = utils.format_nsu("100")
         self.assertEqual(nsu_formatted, "000000000000100")
