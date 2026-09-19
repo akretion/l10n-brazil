@@ -9,7 +9,7 @@
         <field name="purchase_fiscal_operation_id" ref="l10n_br_fiscal.fo_compras" />
     </record>
 
-    <record id="l10n_br_base.empresa_lucro_real" model="res.company">
-        <field name="purchase_fiscal_operation_id" ref="l10n_br_fiscal.fo_compras" />
-    </record>
+    <!-- The Lucro Real demo company (l10n_br_base.empresa_lucro_real) is not
+         available in the 19.0 series of l10n_br_base/l10n_br_fiscal yet, so it
+         is not configured here. -->
 </odoo>

@@ -522,10 +522,10 @@ class L10nBrPurchaseBaseTest(TransactionCase):
 
     def test_purchase_report(self):
         """Test Purchase Report"""
-        self.env["purchase.report"].read_group(
+        self.env["purchase.report"]._read_group(
             [("product_id", "=", self.env.ref("product.product_product_12").id)],
-            ["qty_ordered", "price_average:avg"],
             ["product_id"],
+            ["qty_ordered:sum", "price_average:avg"],
         )
         # TODO: Algo a ser validado?
 
@@ -670,6 +670,12 @@ class L10nBrPurchaseBaseTest(TransactionCase):
         for line in po_international.order_line:
             line.product_id.purchase_method = "purchase"
             self._run_purchase_line_onchanges(line)
+        # An international purchase order carries no Brazilian fiscal
+        # operation, so its invoice must not get a fiscal document. The vendor
+        # is a fixture partner (not Brazilian), so dropping the fiscal
+        # operation is enough to make the case explicit and independent from
+        # the way the demo purchase order was created.
+        po_international.fiscal_operation_id = False
         po_international.with_context(tracking_disable=True).button_confirm()
         po_international.action_create_invoice()
         for invoice in po_international.invoice_ids:
