@@ -2,7 +2,7 @@
 #   Magno Costa <magno.costa@akretion.com.br>
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
-from odoo.tests import Form, TransactionCase
+from odoo.tests import Form, TransactionCase, tagged
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     CFOP_DESTINATION_EXTERNAL,
@@ -16,13 +16,17 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import (
 from .tools import load_purchase_fixture_files
 
 
+@tagged("post_install", "-at_install")
 class L10nBrPurchaseBaseTest(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
         cls.env = cls.env(context=dict(cls.env.context, tracking_disable=True))
 
-        # Load demo data as fixtures if not already present
+        # Load demo data as fixtures if not already present.
+        # The fixtures install a chart of accounts, which requires a fully
+        # loaded registry (hence post_install) and is what makes the suite
+        # work on databases installed without demo data, as OCA CI does.
         if not cls.env.ref(
             "l10n_br_purchase.lp_po_only_products", raise_if_not_found=False
         ):
@@ -522,10 +526,10 @@ class L10nBrPurchaseBaseTest(TransactionCase):
 
     def test_purchase_report(self):
         """Test Purchase Report"""
-        self.env["purchase.report"].read_group(
+        self.env["purchase.report"]._read_group(
             [("product_id", "=", self.env.ref("product.product_product_12").id)],
-            ["qty_ordered", "price_average:avg"],
             ["product_id"],
+            ["qty_ordered:sum", "price_average:avg"],
         )
         # TODO: Algo a ser validado?
 
@@ -670,6 +674,12 @@ class L10nBrPurchaseBaseTest(TransactionCase):
         for line in po_international.order_line:
             line.product_id.purchase_method = "purchase"
             self._run_purchase_line_onchanges(line)
+        # An international purchase order carries no Brazilian fiscal
+        # operation, so its invoice must not get a fiscal document. The vendor
+        # is a fixture partner (not Brazilian), so dropping the fiscal
+        # operation is enough to make the case explicit and independent from
+        # the way the demo purchase order was created.
+        po_international.fiscal_operation_id = False
         po_international.with_context(tracking_disable=True).button_confirm()
         po_international.action_create_invoice()
         for invoice in po_international.invoice_ids:
