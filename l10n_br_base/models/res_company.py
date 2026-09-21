@@ -48,6 +48,42 @@ class Company(models.Model):
         for company in self:
             company.partner_id.l10n_br_ie_code = company.l10n_br_ie_code
 
+    def _get_company_address_field_names(self):
+        """Also match the Brazilian address fields on the company partner."""
+        return super()._get_company_address_field_names() + [
+            "legal_name",
+            "district",
+            "street_name",
+            "street_number",
+            "street_number2",
+            "city_id",
+            "l10n_br_ie_code",
+        ]
+
+    @api.depends(
+        lambda self: [
+            f"partner_id.{fname}" for fname in self._get_company_address_field_names()
+        ]
+    )
+    def _compute_address(self):
+        """Read the company address (and its Brazilian attributes) on the
+        company partner.
+
+        Two differences with the core implementation: the address fields are
+        stored again (their compute/inverse methods used to be a placeholder of
+        the core ``_compute_address`` back when ``res.company`` inherited
+        ``res.partner``), and ``company.update()`` cannot be used anymore since
+        it assigns the raw values of the partner - records for the many2one
+        fields - which cannot be flushed to a stored column. Assigning the
+        fields one by one lets the ORM convert the values.
+        """
+        for company in self.filtered(lambda company: company.partner_id):
+            address_data = company.partner_id.sudo().address_get(adr_pref=["contact"])
+            if address_data["contact"]:
+                partner = company.partner_id.browse(address_data["contact"]).sudo()
+                for fname in company._get_company_address_field_names():
+                    company[fname] = partner[fname]
+
     def _inverse_state(self):
         for company in self:
             company.partner_id.state_id = company.state_id
@@ -75,41 +111,68 @@ class Company(models.Model):
         for company in self:
             company.partner_id.l10n_br_isuf_code = company.l10n_br_isuf_code
 
+    # Odoo 19 turned the address fields of res.company into computed fields
+    # without storage: assigning them is a no-op and reading them recomputes
+    # (via the core address compute, which writes on the company). Store them
+    # again so the company address keeps working for the whole code base, both
+    # for reading and writing; the company partner stays the source of truth
+    # (the compute reads it and the inverse methods write on it).
     legal_name = fields.Char(
         compute="_compute_address",
         inverse="_inverse_legal_name",
+        store=True,
     )
 
     district = fields.Char(
         compute="_compute_address",
         inverse="_inverse_district",
+        store=True,
     )
 
     street_name = fields.Char(
         compute="_compute_address",
         inverse="_inverse_street_name",
+        store=True,
     )
 
     street_number = fields.Char(
         compute="_compute_address",
         inverse="_inverse_street_number",
+        store=True,
     )
 
     street_number2 = fields.Char(
-        compute="_compute_address", inverse="_inverse_street_number2"
+        compute="_compute_address",
+        inverse="_inverse_street_number2",
+        store=True,
     )
 
     city_id = fields.Many2one(
         domain="[('state_id', '=', state_id)]",
         compute="_compute_address",
         inverse="_inverse_city_id",
+        store=True,
     )
 
-    country_id = fields.Many2one(default=lambda self: self.env.ref("base.br"))
+    country_id = fields.Many2one(
+        "res.country",
+        compute="_compute_address",
+        inverse="_inverse_country",
+        store=True,
+        default=lambda self: self.env.ref("base.br"),
+    )
+
+    state_id = fields.Many2one(
+        "res.country.state",
+        compute="_compute_address",
+        inverse="_inverse_state",
+        store=True,
+    )
 
     l10n_br_ie_code = fields.Char(
         compute="_compute_address",
         inverse="_inverse_l10n_br_ie_code",
+        store=True,
     )
 
     state_tax_number_ids = fields.One2many(
