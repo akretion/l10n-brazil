@@ -109,7 +109,19 @@ class Company(models.Model):
     def create(self, vals_list):
         for vals in vals_list:
             self._prepare_address_values(vals)
-        return super().create(vals_list)
+        companies = super().create(vals_list)
+        # the default country_id protects the whole _compute_address on create
+        from_partner = self.browse(
+            company.id
+            for company, vals in zip(companies, vals_list, strict=True)
+            if vals.get("partner_id")
+        )
+        if from_partner:
+            for fname in self._get_company_address_field_names():
+                field = self._fields[fname]
+                if field.store:
+                    self.env.add_to_compute(field, from_partner)
+        return companies
 
     def write(self, vals):
         vals = dict(vals)
@@ -250,4 +262,13 @@ class Company(models.Model):
         self.l10n_br_ie_code = False
         self.partner_id.l10n_br_ie_code = False
         self.partner_id.state_id = self.state_id
+        return res
+
+    @api.onchange("country_id")
+    def _onchange_country_id(self):
+        # the core drops a state from another country on res.partner but not
+        # on res.company, and the state is part of the address of both
+        res = super()._onchange_country_id()
+        if self.country_id and self.country_id != self.state_id.country_id:
+            self.state_id = False
         return res
