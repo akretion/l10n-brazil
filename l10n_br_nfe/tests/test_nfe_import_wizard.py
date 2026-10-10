@@ -832,3 +832,58 @@ class NFeImportWizardTest(TransactionCase):
         self.assertTrue(wrong_product)
         with self.assertRaises(ValidationError):
             line.match_source_id = wrong_product
+
+    def test_fiscal_operation_is_suggested_from_the_line_cfop(self):
+        """Opening the wizard suggests the fiscal operation instead of leaving
+        it empty: the CFOP declared by the supplier is an outbound one, its
+        inverse is the company side of the same operation, and the approved
+        operation line referencing it tells which operation to use."""
+        self._prepare_wizard(self.xml_1)
+
+        line = self.wizard.imported_products_ids[0]
+        cfop = self.env["l10n_br_fiscal.cfop"].search(
+            [("code", "=", line.cfop_xml)], limit=1
+        )
+        self.assertTrue(cfop, "the xml declares a known CFOP")
+        self.assertTrue(cfop.cfop_inverse_id, "the CFOP has its inverse")
+        operation_line = self.env["l10n_br_fiscal.operation.line"].search(
+            [
+                ("state", "=", "approved"),
+                ("fiscal_operation_type", "=", "in"),
+                "|",
+                "|",
+                ("cfop_internal_id", "=", cfop.cfop_inverse_id.id),
+                ("cfop_external_id", "=", cfop.cfop_inverse_id.id),
+                ("cfop_export_id", "=", cfop.cfop_inverse_id.id),
+            ],
+            limit=1,
+        )
+        self.assertTrue(operation_line, "the inverse CFOP is wired to a line")
+
+        # the line and the document suggest the operation of that line
+        self.assertEqual(
+            line._suggest_fiscal_operation(), operation_line.fiscal_operation_id
+        )
+        self.assertEqual(
+            self.wizard._suggest_fiscal_operation(), operation_line.fiscal_operation_id
+        )
+        # and the wizard carries it as soon as the file is parsed
+        self.assertEqual(
+            self.wizard.fiscal_operation_id, operation_line.fiscal_operation_id
+        )
+        self.assertEqual(self.wizard.fiscal_operation_id.fiscal_operation_type, "in")
+
+    def test_find_fiscal_operation_compares_the_operation_direction(self):
+        """The lookup compares the in/out direction of the operation (its
+        ``fiscal_operation_type``), not its ``fiscal_type`` (purchase, sale,
+        return…): it used to compare "in" with those values and hence never
+        found anything."""
+        self._prepare_wizard(self.xml_1)
+
+        # 2102 is the external CFOP of the inbound "Compras" operation
+        operation = self.wizard._find_fiscal_operation("2102", "Compras", "in")
+        self.assertTrue(operation)
+        self.assertEqual(operation.name, "Compras")
+        self.assertEqual(operation.fiscal_operation_type, "in")
+        # the direction is part of the lookup: no outbound operation answers
+        self.assertFalse(self.wizard._find_fiscal_operation("2102", "Compras", "out"))
