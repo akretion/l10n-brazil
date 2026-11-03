@@ -302,6 +302,7 @@ class L10nBrFiscalDocument(spec_models.SpecModel):
         if not self.filtered(filter_nfse_nacional):
             return xml_file
         ns = "http://www.sped.fazenda.gov.br/nfse"
+        ET.register_namespace("", ns)
         root = ET.fromstring(xml_file)
         inf_dps = root.find(f".//{{{ns}}}infDPS")
         if inf_dps is None:
