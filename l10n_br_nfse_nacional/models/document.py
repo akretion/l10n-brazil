@@ -342,6 +342,12 @@ class L10nBrFiscalDocument(spec_models.SpecModel):
                 cserv.remove(child)
             for child in children:
                 cserv.append(child)
+        prest = inf_dps.find(f"{{{ns}}}prest")
+        if prest is not None:
+            # E0120: the ADN rejects the issuer IM when the municipality has
+            # no complementary information registered in CNC NFS-e.
+            for im in prest.findall(f"{{{ns}}}IM"):
+                prest.remove(im)
         return '<?xml version="1.0" encoding="UTF-8"?>' + ET.tostring(
             root, encoding="unicode"
         )
