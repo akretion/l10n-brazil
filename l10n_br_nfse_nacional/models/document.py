@@ -433,9 +433,10 @@ class L10nBrFiscalDocument(spec_models.SpecModel):
     def _adn_send_for_authorization(self):
         self.ensure_one()
         edoc = self.serialize()[0]
+        xml_file = self._nfse_nacional_nt009_layout(edoc.to_xml())
         certificate = self.company_id._get_br_certificate()
         signed_xml = edoc.sign_xml(
-            edoc.to_xml(),
+            xml_file,
             certificate.with_context(bin_size=False).content,
             certificate.pkcs12_password,
             edoc.infDPS.Id,
