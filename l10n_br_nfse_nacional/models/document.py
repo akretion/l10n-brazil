@@ -321,6 +321,27 @@ class L10nBrFiscalDocument(spec_models.SpecModel):
                 inf_dps.insert(list(inf_dps).index(anchor) + 1, fin)
             else:
                 inf_dps.insert(0, fin)
+        serv = inf_dps.find(f"{{{ns}}}serv")
+        cserv = serv.find(f"{{{ns}}}cServ") if serv is not None else None
+        if cserv is not None:
+            order = [
+                "cTribNac",
+                "cTribMun",
+                "cNBS",
+                "cAtvSN",
+                "cIntContrib",
+                "xDescServ",
+            ]
+            children = list(cserv)
+            children.sort(
+                key=lambda child: order.index(child.tag.rsplit("}", 1)[-1])
+                if child.tag.rsplit("}", 1)[-1] in order
+                else len(order)
+            )
+            for child in list(cserv):
+                cserv.remove(child)
+            for child in children:
+                cserv.append(child)
         return '<?xml version="1.0" encoding="UTF-8"?>' + ET.tostring(
             root, encoding="unicode"
         )
