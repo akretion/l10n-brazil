@@ -230,6 +230,9 @@ class L10nBrFiscalDocumentLine(spec_models.SpecModel):
         "pis_percent",
         "cofins_percent",
         "issqn_percent",
+        "irpj_percent",
+        "csll_percent",
+        "inss_percent",
     )
     def _compute_nfse10_tot_trib(self):
         # totTrib is a mandatory xs:choice among vTotTrib, pTotTrib, indTotTrib
@@ -254,7 +257,16 @@ class L10nBrFiscalDocumentLine(spec_models.SpecModel):
                 rec.nfse10_indTotTrib = False
                 rec.nfse10_pTotTribSN = False
                 rec.nfse10_pTotTrib = rec.id
-                federal = (rec.pis_percent or 0.0) + (rec.cofins_percent or 0.0)
+                federal = sum(
+                    rec[f] or 0.0
+                    for f in (
+                        "pis_percent",
+                        "cofins_percent",
+                        "irpj_percent",
+                        "csll_percent",
+                        "inss_percent",
+                    )
+                )
                 rec.nfse10_pTotTribFed = f"{federal:.2f}"
                 rec.nfse10_pTotTribEst = "0.00"
                 rec.nfse10_pTotTribMun = f"{rec.issqn_percent or 0.0:.2f}"
