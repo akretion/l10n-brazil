@@ -93,9 +93,9 @@ class L10nBrFiscalDocumentLine(spec_models.SpecModel):
 
     # Fields mapped to tags
     nfse10_cLocPrestacao = fields.Char(related="issqn_fg_city_id.ibge_code")
-    nfse10_cTribNac = fields.Char(related="national_taxation_code_id.code")
-    nfse10_cTribMun = fields.Char(related="city_taxation_code_id.code")
-    nfse10_cNBS = fields.Char(related="nbs_id.code")
+    nfse10_cTribNac = fields.Char(related="national_taxation_code_id.code_unmasked")
+    nfse10_cTribMun = fields.Char(related="city_taxation_code_id.code_unmasked")
+    nfse10_cNBS = fields.Char(related="nbs_id.code_unmasked")
     nfse10_xDescServ = fields.Char(related="name")
 
     nfse10_vServ = fields.Char(compute="_compute_nfse10_valores")
