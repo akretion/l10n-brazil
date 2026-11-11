@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+    POC for https://github.com/OCA/l10n-brazil/issues/5580
+    Proposal B (extra field): ONE res.partner holds both documents — the CPF
+    in `vat` and the CNPJ of the rural activity in `l10n_br_rural_cnpj`.
+    The NFe tag choice is overridden (see models/res_partner_nfe.py) so the
+    XML goes out with the rural CNPJ.
+
+    The "Contribuinte (PF)" fiscal profile is used so indIEDest=1 and the
+    rural IE is kept/validated.
+-->
+<odoo noupdate="1">
+    <record id="res_partner_rural_producer" model="res.partner">
+        <field name="name">João Silva - Produtor Rural (POC)</field>
+        <field name="legal_name">João da Silva</field>
+        <field name="vat">482.906.174-02</field>
+        <field name="is_company" eval="0" />
+        <field name="street_name">Estrada Municipal</field>
+        <field name="street_number">km 12</field>
+        <field name="district">Zona Rural</field>
+        <field name="state_id" ref="base.state_br_mg" />
+        <field name="city_id" ref="l10n_br_base.city_3132404" />
+        <field name="zip">37500-000</field>
+        <field name="country_id" ref="base.br" />
+        <field name="phone">(35) 99999-0001</field>
+        <field name="l10n_br_ie_code">623.079.040/0090</field>
+        <field name="l10n_br_is_rural_producer" eval="1" />
+        <field name="l10n_br_rural_cnpj">48290617000115</field>
+        <field name="active" eval="1" />
+        <field
+            name="fiscal_profile_id"
+            ref="l10n_br_fiscal.partner_fiscal_profile_pfc"
+        />
+    </record>
+    <function model="res.partner" name="_onchange_city_id">
+        <value eval="[ref('res_partner_rural_producer')]" />
+    </function>
+</odoo>

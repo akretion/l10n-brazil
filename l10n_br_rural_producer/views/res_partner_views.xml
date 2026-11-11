@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="l10n_br_rural_producer_partner_form" model="ir.ui.view">
+        <field name="name">l10n_br_rural_producer.partner.form</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="l10n_br_fiscal.partner_form" />
+        <field name="arch" type="xml">
+            <field name="ind_final" position="after">
+                <field
+                    name="l10n_br_is_rural_producer"
+                    invisible="is_company or country_id != %(base.br)d"
+                />
+                <field
+                    name="l10n_br_rural_cnpj"
+                    invisible="not l10n_br_is_rural_producer"
+                    required="l10n_br_is_rural_producer"
+                    placeholder="CNPJ da atividade rural (CAEPF)"
+                />
+            </field>
+        </field>
+    </record>
+</odoo>
