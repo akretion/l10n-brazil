@@ -2096,6 +2096,7 @@ class CTe(spec_models.StackedModel):
                         line_attrs.update(
                             {
                                 "name": comp.xNome,
+                                "cte40_xNome": comp.xNome,
                                 "price_unit": comp.vComp,
                             }
                         )
