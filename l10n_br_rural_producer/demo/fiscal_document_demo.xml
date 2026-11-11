@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+    POC for https://github.com/OCA/l10n-brazil/issues/5580
+    Proposal A (parent/child) — demo fiscal documents:
+
+    * demo_nfe_rural_out_cnpj: WE sell to the fazenda -> <dest> carries the CNPJ.
+    * demo_nfe_rural_out_cpf: WE sell to the pessoa física -> <dest> carries the CPF.
+      Same person, two fiscal personas, both selectable in the standard
+      partner many2one — no code change required.
+    * demo_nfe_rural_in: the produtor rural EMITS an NFe to us (vendor NFe,
+      issuer=partner): it is registered against the child partner holding
+      his CNPJ, which is exactly the partner the XML import matches by `vat`.
+-->
+<odoo noupdate="1">
+    <!-- Outgoing NFe: sale to the rural activity (CNPJ dest) -->
+    <record id="demo_nfe_rural_out_cnpj" model="l10n_br_fiscal.document">
+        <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_venda" />
+        <field name="document_type_id" ref="l10n_br_fiscal.document_55" />
+        <field
+            name="document_serie_id"
+            ref="l10n_br_fiscal.empresa_lc_document_55_serie_1"
+        />
+        <field name="company_id" ref="l10n_br_base.empresa_lucro_presumido" />
+        <field name="document_serie">1</field>
+        <field name="nfe_environment">2</field>
+        <field name="processador_edoc">oca</field>
+        <field
+            name="partner_id"
+            ref="l10n_br_rural_producer.res_partner_rural_producer_fazenda"
+        />
+        <field name="user_id" ref="base.user_demo" />
+        <field name="fiscal_operation_type">out</field>
+    </record>
+
+    <record id="demo_nfe_rural_out_cnpj_line" model="l10n_br_fiscal.document.line">
+        <field name="document_id" ref="demo_nfe_rural_out_cnpj" />
+        <field name="name">Insumos agrícolas</field>
+        <field name="product_id" ref="product.product_product_6" />
+        <field name="uom_id" ref="uom.product_uom_unit" />
+        <field name="price_unit">100</field>
+        <field name="quantity">1</field>
+        <field name="fiscal_operation_type">out</field>
+        <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_venda" />
+        <field name="fiscal_operation_line_id" ref="l10n_br_fiscal.fo_venda_venda" />
+    </record>
+
+    <!-- Outgoing NFe: sale to the pessoa física (CPF dest) -->
+    <record id="demo_nfe_rural_out_cpf" model="l10n_br_fiscal.document">
+        <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_venda" />
+        <field name="document_type_id" ref="l10n_br_fiscal.document_55" />
+        <field
+            name="document_serie_id"
+            ref="l10n_br_fiscal.empresa_lc_document_55_serie_1"
+        />
+        <field name="company_id" ref="l10n_br_base.empresa_lucro_presumido" />
+        <field name="document_serie">1</field>
+        <field name="nfe_environment">2</field>
+        <field name="processador_edoc">oca</field>
+        <field
+            name="partner_id"
+            ref="l10n_br_rural_producer.res_partner_rural_producer_pf"
+        />
+        <field name="user_id" ref="base.user_demo" />
+        <field name="fiscal_operation_type">out</field>
+    </record>
+
+    <record id="demo_nfe_rural_out_cpf_line" model="l10n_br_fiscal.document.line">
+        <field name="document_id" ref="demo_nfe_rural_out_cpf" />
+        <field name="name">Varejo para consumo pessoal</field>
+        <field name="product_id" ref="product.product_product_27" />
+        <field name="uom_id" ref="uom.product_uom_unit" />
+        <field name="price_unit">100</field>
+        <field name="quantity">1</field>
+        <field name="fiscal_operation_type">out</field>
+        <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_venda" />
+        <field name="fiscal_operation_line_id" ref="l10n_br_fiscal.fo_venda_venda" />
+    </record>
+
+    <!-- Incoming NFe: the produtor rural EMITS it against us (issuer=partner) -->
+    <record id="demo_nfe_rural_in" model="l10n_br_fiscal.document">
+        <field name="issuer">partner</field>
+        <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_compras" />
+        <field name="document_type_id" ref="l10n_br_fiscal.document_55" />
+        <field name="company_id" ref="l10n_br_base.empresa_lucro_presumido" />
+        <field name="document_number">123</field>
+        <field name="document_key">31260148290617000115550010000001231112233446</field>
+        <field name="document_date">2026-01-15 11:00:00</field>
+        <field name="date_in_out">2026-01-15 11:00:00</field>
+        <field name="document_serie">1</field>
+        <field name="nfe_environment">2</field>
+        <field name="processador_edoc">oca</field>
+        <field
+            name="partner_id"
+            ref="l10n_br_rural_producer.res_partner_rural_producer_fazenda"
+        />
+        <field name="user_id" ref="base.user_demo" />
+        <field name="fiscal_operation_type">in</field>
+    </record>
+
+    <record id="demo_nfe_rural_in_line" model="l10n_br_fiscal.document.line">
+        <field name="document_id" ref="demo_nfe_rural_in" />
+        <field name="name">Venda de soja pelo produtor rural</field>
+        <field name="product_id" ref="product.product_product_10" />
+        <field name="uom_id" ref="uom.product_uom_unit" />
+        <field name="price_unit">150</field>
+        <field name="quantity">10</field>
+        <field name="fiscal_operation_type">in</field>
+        <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_compras" />
+        <field
+            name="fiscal_operation_line_id"
+            ref="l10n_br_fiscal.fo_compras_compras"
+        />
+    </record>
+</odoo>

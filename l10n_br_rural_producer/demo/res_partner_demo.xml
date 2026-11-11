@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+    POC for https://github.com/OCA/l10n-brazil/issues/5580
+    Proposal A (parent/child): the produtor rural is modeled with the
+    STANDARD l10n-brazil partner mechanisms only:
+
+    * res_partner_rural_producer_pf: the pessoa física (is_company=False,
+      CPF in `vat`). Used for operations in his own name (personal
+      purchases/sales, CPF-tagged fiscal documents).
+    * res_partner_rural_producer_fazenda: the registered rural activity
+      (CAEPF): a CHILD partner with is_company=True, its own CNPJ in `vat`
+      and its own IE. Fiscal documents of the rural activity use this
+      partner, so the NFe CNPJ/CPF tag choice (`_compute_nfe_data`) works
+      out of the box.
+
+    `_commercial_sync_from_company` / `_commercial_sync_to_children` in
+    l10n_br_base already exclude `vat` from the parent<->children sync,
+    so the two records keep their own documents.
+-->
+<odoo noupdate="1">
+    <!-- Pessoa física: keeps his CPF -->
+    <record id="res_partner_rural_producer_pf" model="res.partner">
+        <field name="name">João Silva - Produtor Rural (POC)</field>
+        <field name="legal_name">João da Silva</field>
+        <field name="vat">482.906.174-02</field>
+        <field name="is_company" eval="0" />
+        <field name="street_name">Estrada Municipal</field>
+        <field name="street_number">km 12</field>
+        <field name="district">Zona Rural</field>
+        <field name="state_id" ref="base.state_br_mg" />
+        <field name="city_id" ref="l10n_br_base.city_3132404" />
+        <field name="zip">37500-000</field>
+        <field name="country_id" ref="base.br" />
+        <field name="phone">(35) 99999-0001</field>
+        <field name="active" eval="1" />
+        <field
+            name="fiscal_profile_id"
+            ref="l10n_br_fiscal.partner_fiscal_profile_pfnc"
+        />
+    </record>
+    <function model="res.partner" name="_onchange_city_id">
+        <value eval="[ref('res_partner_rural_producer_pf')]" />
+    </function>
+
+    <!-- Atividade rural registrada (CAEPF): child company with its own CNPJ + IE -->
+    <record id="res_partner_rural_producer_fazenda" model="res.partner">
+        <field name="name">Fazenda Boa Vista - João Silva (POC)</field>
+        <field name="legal_name">João da Silva - Exploração de Atividade Rural</field>
+        <field name="vat">48.290.617/0001-15</field>
+        <field name="is_company" eval="1" />
+        <field name="parent_id" ref="res_partner_rural_producer_pf" />
+        <field name="street_name">Estrada Municipal</field>
+        <field name="street_number">km 12</field>
+        <field name="district">Zona Rural</field>
+        <field name="state_id" ref="base.state_br_mg" />
+        <field name="city_id" ref="l10n_br_base.city_3132404" />
+        <field name="zip">37500-000</field>
+        <field name="country_id" ref="base.br" />
+        <field name="phone">(35) 99999-0002</field>
+        <field name="l10n_br_ie_code">623.079.040/0090</field>
+        <field name="active" eval="1" />
+        <field
+            name="fiscal_profile_id"
+            ref="l10n_br_fiscal.partner_fiscal_profile_cnt"
+        />
+    </record>
+    <function model="res.partner" name="_onchange_city_id">
+        <value eval="[ref('res_partner_rural_producer_fazenda')]" />
+    </function>
+</odoo>
