@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<!-- Copyright 2026 Akretion - Raphaël Valyi
+<!-- Copyright 2026 Akretion - Raphaël Valyi <raphael.valyi@akretion.com>
      License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl). -->
 <odoo>
+    <!-- Company flag gating prest/IM: the ADN refuses an IM when the issuer
+         municipality registered no complementary info in the CNC NFS-e
+         (E0120), and IM is optional in the leiaute. -->
     <record id="nfse_nacional_res_company_form" model="ir.ui.view">
         <field name="name">
             l10n_br_nfse.res.company.form (in l10n_br_nfse_nacional)
@@ -15,6 +18,28 @@
                     invisible="provedor_nfse != 'nacional'"
                 />
             </field>
+        </field>
+    </record>
+
+    <!-- Multiline DPS: one service line in the DPS per fiscal document line,
+         or a single consolidated service. -->
+    <record id="nfse_nacional_concat_lines_res_company_form" model="ir.ui.view">
+        <field name="name">
+            l10n_br_fiscal.res.company.form (in l10n_br_nfse_nacional)
+        </field>
+        <field name="model">res.company</field>
+        <field name="priority">21</field>
+        <field name="inherit_id" ref="l10n_br_fiscal.fiscal_res_company_form" />
+        <field name="arch" type="xml">
+            <xpath
+                expr="//group[@name='city_specific_nfse_settings']"
+                position="inside"
+            >
+                <field
+                    name="nfse_nacional_concat_lines"
+                    invisible="provedor_nfse != 'nacional'"
+                />
+            </xpath>
         </field>
     </record>
 </odoo>
