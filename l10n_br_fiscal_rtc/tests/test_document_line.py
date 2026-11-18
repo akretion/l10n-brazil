@@ -1,6 +1,8 @@
 # Copyright 2026 Akretion (https://www.akretion.com).
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
+from datetime import date
+
 from odoo.tests import TransactionCase, tagged
 
 
@@ -96,3 +98,55 @@ class TestRtcDocumentLine(TransactionCase):
         self.assertEqual(values["rtc_status"], "error")
         # the legacy value is kept, the invoice is not blocked
         self.assertAlmostEqual(values["ibs_value"], 7.77, 2)
+
+    def test_simples_nacional_line(self):
+        """A Simples company uses its own rates and matrices."""
+        company = self.env.ref("base.main_company")
+        company.partner_id.tax_framework = "1"
+        company.invalidate_recordset()
+        document = self.env["l10n_br_fiscal.document"].create(
+            {
+                "company_id": company.id,
+                "document_date": "2027-03-10 10:00:00",
+                "fiscal_operation_type": "out",
+                "document_type_id": self.env.ref("l10n_br_fiscal.document_55").id,
+            }
+        )
+        activity = self.env["l10n_br_fiscal.rtc.sn.activity"].find(
+            "01", date(2027, 3, 10)
+        )
+        line = self._line(
+            self.classification,
+            document_id=document.id,
+            rtc_sn_activity_id=activity.id,
+            rtc_sn_ibs_percent=1.25,
+            rtc_sn_cbs_percent=2.75,
+        )
+        values = line._prepare_fields_ibs(self._tax_dict(1000.0))
+        self.assertEqual(values["rtc_status"], "calculated_sn")
+        self.assertAlmostEqual(values["ibs_value"], 12.50, 2)
+        self.assertAlmostEqual(values["rtc_sn_ibs_value"], 12.50, 2)
+        self.assertEqual(values["rtc_sn_revenue_type"], 1)
+
+    def test_simples_nacional_without_activity(self):
+        """No cAtivSN: the official rule does not calculate, no crash."""
+        company = self.env.ref("base.main_company")
+        company.partner_id.tax_framework = "1"
+        company.invalidate_recordset()
+        document = self.env["l10n_br_fiscal.document"].create(
+            {
+                "company_id": company.id,
+                "document_date": "2027-03-10 10:00:00",
+                "fiscal_operation_type": "out",
+                "document_type_id": self.env.ref("l10n_br_fiscal.document_55").id,
+            }
+        )
+        line = self._line(
+            self.classification,
+            document_id=document.id,
+            rtc_sn_ibs_percent=1.25,
+            rtc_sn_cbs_percent=2.75,
+        )
+        values = line._prepare_fields_ibs(self._tax_dict(1000.0))
+        self.assertEqual(values["rtc_status"], "simples_nacional_activity")
+        self.assertEqual(values["ibs_value"], 0.0)
