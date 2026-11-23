@@ -44,7 +44,8 @@ class StockInvoiceOnshipping(models.TransientModel):
                 # origins.add(purchase_values["invoice_origin"])
                 payment_refs.add(purchase_values["payment_reference"])
                 refs.add(purchase_values["ref"])
-                narration.add(purchase_values["narration"])
+                if purchase_values["narration"]:
+                    narration.add(purchase_values["narration"])
 
                 # Original dict from purchase module.
 
@@ -86,9 +87,14 @@ class StockInvoiceOnshipping(models.TransientModel):
                         "payment_reference": len(payment_refs) == 1
                         and payment_refs.pop()
                         or False,
-                        "narration": ", ".join(narration),
                     }
                 )
+                if narration:
+                    values.update(
+                        {
+                            "narration": ", ".join(narration),
+                        }
+                    )
 
         return invoice, values
 

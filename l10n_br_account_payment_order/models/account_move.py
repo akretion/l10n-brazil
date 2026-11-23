@@ -53,6 +53,7 @@ class AccountMove(models.Model):
         """
         # Veja exemplo em:
         # l10n_br_account_payment_brcobranca/models/account_move.py
+        self.load_cnab_info()
         return None
 
     def _target_new_tab(self, attachment_id):
@@ -64,8 +65,7 @@ class AccountMove(models.Model):
             }
 
     def view_boleto_pdf(self):
-        if not self.file_boleto_pdf_id:
-            self.generate_boleto_pdf()
+        self.generate_boleto_pdf()
         return self._target_new_tab(self.file_boleto_pdf_id)
 
     def button_cancel(self):
@@ -91,7 +91,7 @@ class AccountMove(models.Model):
 
     def _post(self, soft=True):
         result = super()._post(soft)
-        self.load_cnab_info()
+        # self.load_cnab_info()
         return result
 
     def load_cnab_info(self):
@@ -109,6 +109,9 @@ class AccountMove(models.Model):
         if self.payment_mode_id.payment_method_code not in BR_CODES_PAYMENT_ORDER:
             return
         for index, interval in enumerate(self.due_line_ids):
+            # Não gera novamente o nosso número
+            if interval.own_number:
+                continue
             inv_number = self.get_invoice_fiscal_number().split("/")[-1]
             numero_documento = inv_number + "/" + str(index + 1).zfill(2)
             cnab_config = interval.payment_mode_id.cnab_config_id
@@ -129,6 +132,7 @@ class AccountMove(models.Model):
         filtered_invoice_ids = self.filtered(
             lambda s: (
                 s.payment_mode_id and s.payment_mode_id.auto_create_payment_order
+                and s.payment_line_count == 0
             )
         )
         if filtered_invoice_ids:
