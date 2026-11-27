@@ -3,6 +3,7 @@
 
 import datetime
 import logging
+import re
 from collections import defaultdict
 from io import StringIO
 
@@ -19,6 +20,26 @@ _logger = logging.getLogger(__name__)
 # accented character and the government validator would read the text as
 # mojibake.
 SPED_ENCODING = "iso-8859-1"
+
+# Item 2.2.2 do leiaute: um campo alfanumerico (C) aceita todos os caracteres
+# da tabela ASCII menos o "|" (124), que e o delimitador de campo, e os
+# nao-imprimiveis (00 a 31). Os dois chegam do cadastro e do XML da NF-e --
+# razao social gravada como "FULANO | CIDADE-UF", observacao com quebra de
+# linha -- e cada um corrompe o arquivo de um jeito proprio: o pipe desloca
+# todos os campos seguintes do registro, o caractere de controle parte a
+# linha em duas. O DEL (127) entra junto por nao ser imprimivel.
+SPED_FORBIDDEN_CHARS = re.compile(r"[\x00-\x1f\x7f|]")
+
+# Item 2.2.3: "Todos os campos alfanumericos terao tamanho maximo de 255
+# caracteres, exceto se houver indicacao distinta."
+#
+# O `sped_length` do spec gerado NAO serve para esse corte: o extrator do
+# leiaute descarta os zeros do tamanho, entao 0150.NOME ("C 100") chega aqui
+# como "1" e 0150.END ("C 060") como "6" -- truncar por ele cortaria o nome de
+# cada participante em uma letra. Enquanto o extrator nao for corrigido, este
+# limite geral e o unico automatico, e onde o leiaute e mais restrito o corte
+# fica declarado no mapping do registro.
+SPED_DEFAULT_CHAR_LENGTH = 255
 
 LAYOUT_VERSIONS = {
     "ecd": "9",
@@ -48,12 +69,7 @@ class SpedMixin(models.AbstractModel):
 
     brl_currency_id = fields.Many2one(
         comodel_name="res.currency",
-        # It cannot be labeled just "Currency": several layout records carry
-        # a field of their own with that label (TIP_MOEDA of the X320 of the
-        # ECF, for instance), and two fields with the same label on the same
-        # model raise a WARNING on load, which the OCA checklog turns into a
-        # failure.
-        string="Bookkeeping Currency",
+        string="Moeda",
         compute="_compute_currency_id",
         default=lambda self: self.env.ref("base.BRL").id,
     )
@@ -573,13 +589,13 @@ class SpedMixin(models.AbstractModel):
             # em branco e o PVA recusa o registro.
             field = self._fields.get(fname) or register_spec._fields[fname]
             val = self._format_field_value(field, value)
-            if isinstance(val, str) and ("\n" in val or "\r" in val):
-                # SPED is a pipe-delimited flat file with one register per
-                # line: a line break inside a field would split the register
-                # line and corrupt the file (the PVA rejects it). This can
-                # happen with texts imported from the NFe (observations,
-                # product descriptions) that contain line breaks.
-                val = val.replace("\r\n", " ").replace("\n", " ").replace("\r", " ")
+            # Saneamento no fim da linha, e nao dentro do _format_field_value,
+            # para alcancar tambem os tipos que nao passam pelo ramo (C):
+            # basta um "|" vindo de qualquer valor para deslocar todos os
+            # campos seguintes e invalidar o registro inteiro. A substituicao
+            # e 1:1 para nao desfazer o truncamento ja aplicado. O strip tira
+            # os espacos nas pontas do campo, que o PVA tambem recusa.
+            val = SPED_FORBIDDEN_CHARS.sub(" ", val).strip()
             sped.write(f"{val}|")
 
     def _format_field_value(self, field, value):
@@ -593,23 +609,41 @@ class SpedMixin(models.AbstractModel):
         if field.type == "date":
             return value.strftime("%d%m%Y") if value else ""
         elif field.type == "char" or field.type == "selection":
-            return str(value) if value else ""
+            if not value:
+                return ""
+            # `size` e o limite que o registro concreto declara quando o
+            # leiaute e mais estrito que o maximo geral; sem ele vale o 255 do
+            # item 2.2.3. Truncar aqui, e nao no mapping de cada campo, e o
+            # que garante que nenhum texto livre vindo do cadastro ou da NF-e
+            # estoure o campo e derrube o registro no validador.
+            max_length = getattr(field, "size", None) or SPED_DEFAULT_CHAR_LENGTH
+            return str(value)[:max_length]
         elif field.type == "integer":
-            return "" if value == 0 else str(value)
-        elif field.type == "monetary":
-            # only monetary: a quantity is Float with digits=(16, 5) and two
-            # decimals would round it (0,125 as "0,13")
-            return (
-                ""
-                if float_is_zero(value, precision_digits=8)
-                else (f"{value:.2f}".replace(".", ","))
-            )
+            if value == 0:
+                return "0" if getattr(field, "sped_required", False) else ""
+            return str(value)
         elif field.type == "float":
             return (
                 str(int(value))
                 if float_is_zero(value % 1, 6)
                 else str(round(value, 6)).replace(".", ",")
             )
+        elif field.type == "monetary":
+            # Item 2.2.4: virgula como separador decimal, sem separador de
+            # milhar, respeitando as casas decimais do campo -- que nos
+            # valores monetarios do leiaute sao sempre duas (TDec_1602).
+            # `str(value)` entregava a repr do float, com ponto no lugar da
+            # virgula e com o ruido da base 2 junto: o VL_ITEM de R$ 1.594,84
+            # saia do arquivo como "1594.8400000000001".
+            if float_is_zero(value, precision_digits=2):
+                # Campo obrigatorio (O) do leiaute nao pode sair vazio: o PVA
+                # da "Campo obrigatorio" para cada C190 sem ICMS ST, reducao
+                # ou IPI. O registro concreto marca esses campos com
+                # `sped_required=True`; os demais seguem vazios quando zerados.
+                if getattr(field, "sped_required", False):
+                    return "0,00"
+                return ""
+            return f"{value:.2f}".replace(".", ",")
         else:
             return str(value)
 
@@ -736,6 +770,8 @@ class SpedMixin(models.AbstractModel):
         registers = self.create(vals_list) if vals_list else self.browse()
 
         for register, record in zip(registers, records, strict=True):
+            if self._skip_children(record):
+                continue
             for child in children:
                 self.env[child]._pull_records_from_odoo(
                     kind,
@@ -744,6 +780,14 @@ class SpedMixin(models.AbstractModel):
                     parent_record=record,
                     log_msg=log_msg,
                 )
+
+    @api.model
+    def _skip_children(self, record):
+        """True quando os registros filhos nao devem ser gerados para `record`.
+
+        Ex.: documento cancelado, que o leiaute aceita sem nenhum filho.
+        """
+        return False
 
     @api.model
     def _log_chatter_sped_item(self, log_msg, level, records=None):

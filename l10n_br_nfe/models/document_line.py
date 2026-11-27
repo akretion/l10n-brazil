@@ -363,11 +363,11 @@ class NFeLine(spec_models.StackedModel):
             xsd_fields.remove("nfe40_ISSQN")
         else:
             xsd_fields.remove("nfe40_ICMS")
-            xsd_fields.remove("nfe40_II")
 
         if (
             not self.icms_value
-            or self.icms_value <= 0
+            or self.icms_value <= 0.0
+            or not self.icms_destination_base
             or self.partner_id.ind_ie_dest != "9"
             or self.partner_id.state_id == self.company_id.state_id
             or self.partner_id.country_id != self.company_id.country_id
@@ -1012,6 +1012,9 @@ class NFeLine(spec_models.StackedModel):
         for tag_to_remove in remove_tags.get(self.ibs_cst_id.code, default_remove):
             if tag_to_remove in xsd_fields:
                 xsd_fields.remove(tag_to_remove)
+
+        if not self.ibs_value and not self.cbs_value:
+            xsd_fields.remove("nfe40_gIBSCBS")
 
     # Export nfe40_gIBSCBS
 

@@ -161,20 +161,6 @@ class SpedDeclaration(models.AbstractModel):
         log_msg = StringIO()
         log_msg.write(f"<h3>{_('Pulled from Odoo')}</h3>")
         kind = self._get_kind()
-
-        # The declaration record IS the 0000: without its own mapping the header
-        # goes out blank and the validator refuses the file. Only empty fields are
-        # written, so what the user typed wins.
-        if hasattr(self, "_map_from_odoo"):
-            header_record = self.company_id
-            if self._odoo_model and self._odoo_model != "res.company":
-                header_record = self.env[self._odoo_model].search(
-                    self._odoo_domain(None, self), limit=1
-                )
-            vals = self._map_from_odoo(header_record, None, self)
-            self.write(
-                {field: value for field, value in vals.items() if not self[field]}
-            )
         mixin_env = self.env["l10n_br_sped.mixin"].with_context(
             company_id=self.company_id.id,
             declaration=self,
@@ -252,6 +238,13 @@ class SpedDeclaration(models.AbstractModel):
             file_name = f"{kind.upper()}-bloco_{bloco}-{self.name_get()[0][1]}.txt"
         else:
             file_name = f"{kind.upper()}-{self.name_get()[0][1]}.txt"
+
+        # O leiaute termina toda linha com CR LF, inclusive a ultima. Sem a
+        # quebra depois do |9999| o PVA recusa a importacao: "A ultima linha
+        # da escrituracao nao termina com caracter indicador de final de
+        # linha".
+        lines = text.replace("\r\n", "\n").rstrip("\n").split("\n")
+        text = "".join(f"{line}\r\n" for line in lines)
 
         return {
             "name": file_name,

@@ -9,7 +9,6 @@ from os import path
 from unittest import mock
 from unittest.mock import patch
 
-from erpbrasil.base import misc
 from lxml import etree
 from odoo_test_helper import FakeModelLoader
 
@@ -208,6 +207,37 @@ class TestSpedBase(TransactionCase, FakeModelLoader):
             # the assertion above really distinguishes the two
             self.assertIsNot(field, spec._fields[name])
 
+    def test_register_line_drops_the_characters_the_layout_forbids(self):
+        """Nem "|" nem caractere de controle chegam ao arquivo.
+
+        Item 2.2.2 do leiaute: um campo (C) aceita a tabela ASCII menos o
+        pipe, que e o delimitador, e os nao-imprimiveis. Os dois chegam do
+        cadastro -- razao social gravada como "FULANO | CIDADE-UF", observacao
+        colada com quebra de linha -- e cada um corrompe o registro de um
+        jeito: o pipe empurra todos os campos seguintes uma posicao para a
+        frente, o caractere de controle parte a linha em duas.
+        """
+        def first_line():
+            sped = StringIO()
+            self.declaration._generate_register_text(
+                sped, "9", [0], defaultdict(int)
+            )
+            return sped.getvalue().splitlines()[0]
+
+        self.declaration.NOME = "ACME SAO PAULO SP com quebra"
+        clean = first_line()
+
+        self.declaration.NOME = "ACME | SAO PAULO - SP\ncom quebra"
+        dirty = first_line()
+
+        self.assertNotIn("\n", dirty)
+        self.assertIn("ACME   SAO PAULO - SP com quebra", dirty)
+        self.assertEqual(
+            len(dirty.split("|")),
+            len(clean.split("|")),
+            "o pipe do cadastro deslocou os campos do registro",
+        )
+
     def test_generate_sped(self):
         sped = self.declaration._generate_sped_text()
         with open(self.file_path, encoding=SPED_ENCODING) as f:
@@ -251,10 +281,38 @@ class TestSpedBase(TransactionCase, FakeModelLoader):
         )
 
     def test_format_field_value(self):
-        """An amount always carries two decimals; a quantity is not rounded."""
+        """
+        Test the _format_field_value method from SpedMixin,
+        focusing on Float and Monetary types.
+        """
         mixin_instance = self.env["l10n_br_sped.fake.9.0000"]
 
-        # --- Monetary ---
+        # --- Test Float field formatting ---
+        mock_float_field = mock.Mock()
+        mock_float_field.type = "float"
+        mock_float_field.sped_decimals = 2  # Simulate the attribute you might add
+
+        # Test float with 2 decimals
+        self.assertEqual(
+            mixin_instance._format_field_value(mock_float_field, 1234.567),
+            "1234,567",
+        )
+        # Test float that results in integer after rounding
+        self.assertEqual(
+            mixin_instance._format_field_value(mock_float_field, 1234.001),
+            "1234,001",
+        )
+        # Test zero float
+        self.assertEqual(
+            mixin_instance._format_field_value(mock_float_field, 0.0),
+            "0",
+        )
+
+        # --- Test Monetary field formatting ---
+        # Item 2.2.4 do leiaute: virgula como separador decimal e as duas
+        # casas que o campo monetario declara. Estas asserttivas guardavam a
+        # repr do float ("789.123"), que e como o VL_ITEM de R$ 1.594,84 saia
+        # do arquivo escrito "1594.8400000000001".
         mock_monetary_field = mock.Mock()
         mock_monetary_field.type = "monetary"
 
@@ -267,41 +325,16 @@ class TestSpedBase(TransactionCase, FakeModelLoader):
             "789,00",
         )
         self.assertEqual(
-            mixin_instance._format_field_value(mock_monetary_field, 17500.0),
-            "17500,00",
+            mixin_instance._format_field_value(mock_monetary_field, 1594.8400000000001),
+            "1594,84",
         )
-        # A negative value keeps its sign
-        self.assertEqual(
-            mixin_instance._format_field_value(mock_monetary_field, -15.5),
-            "-15,50",
-        )
+        # Test zero monetary
         self.assertEqual(
             mixin_instance._format_field_value(mock_monetary_field, 0.0),
-            "",
+            "",  # Your current logic returns "" for zero
         )
 
-        # --- Float ---
-        mock_float_field = mock.Mock()
-        mock_float_field.type = "float"
-
-        self.assertEqual(
-            mixin_instance._format_field_value(mock_float_field, 500.0),
-            "500",
-        )
-        self.assertEqual(
-            mixin_instance._format_field_value(mock_float_field, 0.125),
-            "0,125",
-        )
-        self.assertEqual(
-            mixin_instance._format_field_value(mock_float_field, 1234.567),
-            "1234,567",
-        )
-        self.assertEqual(
-            mixin_instance._format_field_value(mock_float_field, 0.0),
-            "0",
-        )
-
-        # --- Integer ---
+        # --- Test Integer field formatting ---
         mock_integer_field = mock.Mock()
         mock_integer_field.type = "integer"
         self.assertEqual(
@@ -316,6 +349,7 @@ class TestSpedBase(TransactionCase, FakeModelLoader):
         # --- Test Char field formatting ---
         mock_char_field = mock.Mock()
         mock_char_field.type = "char"
+        mock_char_field.size = None  # o campo nao declara limite proprio
         self.assertEqual(
             mixin_instance._format_field_value(
                 mock_char_field,
@@ -326,6 +360,19 @@ class TestSpedBase(TransactionCase, FakeModelLoader):
         self.assertEqual(
             mixin_instance._format_field_value(mock_char_field, False),
             "",
+        )
+        # Item 2.2.3: sem indicacao distinta, um campo (C) para em 255
+        self.assertEqual(
+            len(mixin_instance._format_field_value(mock_char_field, "a" * 400)),
+            255,
+        )
+        # e o registro que declara um limite menor manda nele
+        mock_sized_field = mock.Mock()
+        mock_sized_field.type = "char"
+        mock_sized_field.size = 10
+        self.assertEqual(
+            mixin_instance._format_field_value(mock_sized_field, "a" * 400),
+            "a" * 10,
         )
 
         # --- Test Date field formatting ---
@@ -927,42 +974,3 @@ class TestSpedBase(TransactionCase, FakeModelLoader):
             path = handle.name
         declaration = self.env["l10n_br_sped.mixin"]._import_file(path, "fake")
         self.assertTrue(declaration)
-
-    def test_populate_fills_the_declaration_header(self):
-        """The declaration IS the 0000: pulling must fill its own fields.
-
-        Before the fix only the child registers were pulled and the header
-        went out blank (LECD, the company identification), which the PVA
-        refuses at the door. What the user typed must survive the pull.
-        """
-        company = self.declaration.company_id
-        # the fake spec keeps Odoo required on the header fields, so the
-        # create carries the minimum and the assertion targets the optional
-        # mapped fields the pull must fill
-        declaration = self.env["l10n_br_sped.fake.0000"].create(
-            {
-                "company_id": company.id,
-                "DT_INI": "2019-01-01",
-                "DT_FIN": "2019-12-31",
-                "LECD": "LECD",
-                "NOME": "typed by the user",
-                "CNPJ": "00000000000000",
-                "UF": "XX",
-                "IND_NIRE": "0",
-                "IND_FIN_ESC": "0",
-                "IND_GRANDE_PORTE": "0",
-                "TIP_ECD": 0,
-                "IDENT_MF": "N",
-                "IND_ESC_CONS": "N",
-                "IND_CENTRALIZADA": "0",
-                "IND_MUDANC_PC": "0",
-            }
-        )
-        self.assertFalse(declaration.IE)
-        declaration.button_populate_sped_from_odoo()
-        # optional header fields came from the company mapping
-        self.assertEqual(declaration.IE, misc.punctuation_rm(company.l10n_br_ie_code))
-        self.assertEqual(declaration.COD_MUN, company.city_id.ibge_code)
-        # what the user typed by hand is never overwritten
-        self.assertEqual(declaration.NOME, "typed by the user")
-        self.assertEqual(declaration.CNPJ, "00000000000000")

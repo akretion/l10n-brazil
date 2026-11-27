@@ -499,6 +499,8 @@ class Tax(models.Model):
                     and operation_line.fiscal_operation_id.fiscal_type != "return_in"
                 )
             )
+            and operation_line.fiscal_operation_id.fiscal_type
+            not in ("return_out", "sale_refund")
         ):
             icms_tax_difal, _ = company.icms_regulation_id.map_tax_def_icms_difal(
                 company, partner, product, ncm, nbm, cest, operation_line, ind_final
